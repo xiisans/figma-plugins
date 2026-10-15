@@ -1,0 +1,18 @@
+{
+  "name": "figma-batch-rename",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A Figma plugin for batch renaming selected frames.",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.117.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.2",
+    "vitest": "^5.0.2"
+  }
+}

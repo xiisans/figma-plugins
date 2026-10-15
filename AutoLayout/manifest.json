@@ -1,0 +1,8 @@
+{
+  "name": "批量自动布局",
+  "id": "1512345678901234567",
+  "api": "1.0.0",
+  "main": "code-adaptive.js",
+  "ui": "ui-adaptive.html",
+  "editorType": ["figma"]
+}

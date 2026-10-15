@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>批量自动布局</title>
+    <style>
+:root {
+  color-scheme: light;
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --text: #202124;
+  --muted: #737780;
+  --line: #e1e3e8;
+  --accent: #18a875;
+  --accent-soft: #e7f7f0;
+  --danger: #bf3d46;
+  --danger-soft: #fff0f1;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 300px;
+  background: var(--bg);
+  color: var(--text);
+  font: 12px/1.4 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.panel { padding: 20px 18px 16px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+.header h1 { margin: 0 0 4px; font-size: 18px; line-height: 1.2; letter-spacing: 0; font-weight: 700; }
+.header p { margin: 0; color: var(--muted); font-size: 11px; }
+.status-dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.section { border-top: 1px solid var(--line); padding-top: 14px; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-heading h2 { margin: 0; font-size: 12px; font-weight: 700; }
+.section-heading span { color: var(--muted); font-size: 11px; }
+.padding-grid { display: grid; grid-template-columns: 1fr 1fr 34px; gap: 10px 8px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > span { color: var(--muted); font-size: 11px; }
+input { width: 100%; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 9px; outline: none; background: var(--surface); color: var(--text); font: inherit; transition: border-color .15s, box-shadow .15s; }
+input:hover { border-color: #c5c8ce; }
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+input.invalid { border-color: var(--danger); background: var(--danger-soft); }
+.lock-cell { display: flex; align-items: flex-end; justify-content: center; height: 52px; }
+.lock-button { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); cursor: pointer; font-size: 17px; line-height: 1; }
+.lock-button:hover { border-color: #b7bbc2; color: var(--text); }
+.lock-button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.gap-section { margin-top: 16px; }
+.wide-field { max-width: 140px; }
+.feedback { min-height: 38px; margin: 18px 0 12px; padding: 9px 10px; border-radius: 6px; color: var(--muted); background: transparent; font-size: 11px; }
+.feedback:not(:empty) { background: #eef1f4; }
+.feedback.error { color: var(--danger); background: var(--danger-soft); }
+.feedback.success { color: #11734f; background: var(--accent-soft); }
+.apply-button { width: 100%; height: 36px; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 7px; background: var(--accent); color: white; cursor: pointer; font: inherit; font-weight: 700; }
+.apply-button:hover { background: #128c62; }
+.apply-button:active { transform: translateY(1px); }
+.apply-button:disabled { opacity: .6; cursor: wait; }
+.apply-arrow { font-size: 15px; }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 10px; text-align: center; }
+
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --bg: #252627; --surface: #303133; --text: #f1f2f3; --muted: #a5a8ad; --line: #484a4f; --accent-soft: #173d31; --danger-soft: #45282b; }
+}
+
+    </style>
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <div>
+          <h1>批量自动布局</h1>
+          <p>分别为选中元素应用 Auto Layout</p>
+        </div>
+        <span class="status-dot" aria-hidden="true"></span>
+      </header>
+
+      <section class="section" aria-labelledby="padding-title">
+        <div class="section-heading">
+          <h2 id="padding-title">Padding</h2>
+          <span>px</span>
+        </div>
+        <div class="padding-grid">
+          <label class="field field-top">
+            <span>上</span>
+            <input id="top" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
+          </label>
+          <label class="field field-bottom">
+            <span>下</span>
+            <input id="bottom" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
+          </label>
+          <div class="lock-cell">
+            <button id="vertical-lock" class="lock-button" type="button" aria-pressed="false" title="锁定上下 Padding">↕</button>
+          </div>
+          <label class="field field-right">
+            <span>左</span>
+            <input id="right" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
+          </label>
+          <label class="field field-left">
+            <span>右</span>
+            <input id="left" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
+          </label>
+          <div class="lock-cell">
+            <button id="horizontal-lock" class="lock-button" type="button" aria-pressed="false" title="锁定左右 Padding">↔</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section gap-section">
+        <label class="field wide-field" for="gap">
+          <span>Gap</span>
+          <input id="gap" type="number" min="0" max="10000" step="1" value="8" inputmode="numeric" />
+        </label>
+      </section>
+
+      <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+      <button id="apply" class="apply-button" type="button">
+        <span>确定</span>
+        <span class="apply-arrow" aria-hidden="true">&#8594;</span>
+      </button>
+      <!-- <p class="hint">已有 Auto Layout 的节点会直接更新，普通元素会创建独立包装 Frame。</p> -->
+    </main>
+    <script>
+(function () {
+  var ids = ['top', 'right', 'bottom', 'left', 'gap'];
+  var inputs = {};
+  ids.forEach(function (id) { inputs[id] = document.getElementById(id); });
+  var verticalLock = document.getElementById('vertical-lock');
+  var horizontalLock = document.getElementById('horizontal-lock');
+  var applyButton = document.getElementById('apply');
+  var feedback = document.getElementById('feedback');
+  var locked = { vertical: false, horizontal: false };
+
+  function setFeedback(text, kind) {
+    feedback.textContent = text || '';
+    feedback.className = 'feedback' + (kind ? ' ' + kind : '');
+  }
+
+  function parseInput(input) {
+    var raw = input.value.trim();
+    var valid = raw !== '' && /^\d+$/.test(raw) && Number(raw) >= 0 && Number(raw) <= 10000;
+    input.classList.toggle('invalid', !valid);
+    return valid ? Number(raw) : null;
+  }
+
+  function sync(source, target) {
+    inputs[target].value = inputs[source].value;
+    inputs[target].classList.remove('invalid');
+  }
+
+  inputs.top.addEventListener('input', function () { if (locked.vertical) sync('top', 'bottom'); });
+  inputs.bottom.addEventListener('input', function () { if (locked.vertical) sync('bottom', 'top'); });
+  inputs.left.addEventListener('input', function () { if (locked.horizontal) sync('left', 'right'); });
+  inputs.right.addEventListener('input', function () { if (locked.horizontal) sync('right', 'left'); });
+  ids.forEach(function (id) { inputs[id].addEventListener('blur', function () { parseInput(inputs[id]); }); });
+
+  verticalLock.addEventListener('click', function () {
+    locked.vertical = !locked.vertical;
+    verticalLock.setAttribute('aria-pressed', String(locked.vertical));
+    if (locked.vertical) sync('top', 'bottom');
+  });
+  horizontalLock.addEventListener('click', function () {
+    locked.horizontal = !locked.horizontal;
+    horizontalLock.setAttribute('aria-pressed', String(locked.horizontal));
+    if (locked.horizontal) sync('left', 'right');
+  });
+
+  applyButton.addEventListener('click', function () {
+    var values = {};
+    var invalid = false;
+    ids.forEach(function (id) {
+      var value = parseInput(inputs[id]);
+      if (value === null) invalid = true;
+      values[id] = value;
+    });
+    if (invalid) {
+      setFeedback('请填写 0 到 10000 之间的非负整数。', 'error');
+      return;
+    }
+    applyButton.disabled = true;
+    setFeedback('正在处理选中元素…');
+    parent.postMessage({ pluginMessage: { type: 'apply', values: values } }, '*');
+  });
+
+  window.onmessage = function (event) {
+    var message = event.data && event.data.pluginMessage;
+    if (!message || message.type !== 'result') return;
+    applyButton.disabled = false;
+    if (message.summary && (message.summary.skipped || message.summary.failed)) {
+      var lines = ['成功 ' + message.summary.success + '，跳过 ' + message.summary.skipped + '，失败 ' + message.summary.failed + '。'];
+      (message.items || []).forEach(function (item) {
+        if (item.status !== 'success') lines.push(item.name + '：' + item.reason);
+      });
+      setFeedback(lines.join('\n'), message.summary.success ? 'success' : 'error');
+      feedback.style.whiteSpace = 'pre-line';
+    } else {
+      setFeedback(message.message || '处理完成。', message.ok ? 'success' : 'error');
+    }
+  };
+})();
+
+    </script>
+  </body>
+</html>

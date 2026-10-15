@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ES2020",
+    "outDir": ".build",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["ES2019", "DOM"]
+  },
+  "files": ["code.ts"]
+}

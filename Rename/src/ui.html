@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>批量重命名</title>
+    <style>
+/*__STYLES__*/
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="tabs" role="tablist" aria-label="重命名模式">
+        <button id="quick-tab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="quick-panel">快速命名</button>
+        <button id="replace-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="replace-panel">选择替换</button>
+      </header>
+
+      <section class="content">
+        <div id="quick-panel" class="mode-panel" role="tabpanel" aria-labelledby="quick-tab">
+          <label class="field">
+            <span class="field-label">画板名称</span>
+            <input id="base-name" class="text-input" type="text" placeholder="请输入画板名称" autocomplete="off" />
+          </label>
+
+          <div class="field-group">
+            <div class="field-label">添加数字或字母</div>
+            <div class="sequence-row">
+              <input id="number-digits" class="sequence-input" type="number" min="1" max="32" inputmode="numeric" placeholder="数字位数" />
+              <div class="segmented" aria-label="数字排序">
+                <button class="segment is-active" type="button" data-number-direction="asc">升序</button>
+                <button class="segment" type="button" data-number-direction="desc">降序</button>
+              </div>
+              <button id="toggle-number" class="add-button" type="button">添加</button>
+            </div>
+            <div class="sequence-row letter-row">
+              <input id="letter-width" class="sequence-input" type="number" min="1" max="10" inputmode="numeric" placeholder="字母位数" />
+              <div class="segmented" aria-label="字母大小写">
+                <button class="segment is-active" type="button" data-letter-case="upper">大写</button>
+                <button class="segment" type="button" data-letter-case="lower">小写</button>
+              </div>
+              <div class="segmented" aria-label="字母排序">
+                <button class="segment is-active" type="button" data-letter-direction="asc">升序</button>
+                <button class="segment" type="button" data-letter-direction="desc">降序</button>
+              </div>
+              <button id="toggle-letter" class="add-button" type="button">添加</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="replace-panel" class="mode-panel" role="tabpanel" aria-labelledby="replace-tab" hidden>
+          <label class="field">
+            <span class="field-label">输入文字</span>
+            <input id="search-text" class="text-input" type="text" placeholder="请输入要替换的文字" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-label">替换文字</span>
+            <input id="replacement-text" class="text-input" type="text" placeholder="请输入替换成的文字（留空表示删除）" autocomplete="off" />
+          </label>
+        </div>
+
+        <section class="preview-section" aria-labelledby="preview-title">
+          <div class="preview-heading">
+            <span id="preview-title" class="field-label">结果预览</span>
+            <span id="selection-meta" class="selection-meta"></span>
+          </div>
+          <div id="preview-list" class="preview-grid" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <footer class="footer">
+        <label class="sync-note" title="可取消或重新勾选">
+          <input id="sync-layer-name" type="checkbox" checked />
+          <span>同步更改图层名称</span>
+        </label>
+        <button id="confirm-button" class="confirm-button" type="button" disabled>确定</button>
+      </footer>
+      <div id="status-message" class="sr-only" role="status" aria-live="polite"></div>
+    </main>
+    <script>
+/*__SCRIPT__*/
+    </script>
+  </body>
+</html>

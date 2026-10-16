@@ -179,7 +179,7 @@ function App() {
           <button type="button" className="refresh-button" aria-label="刷新变量列表" title="刷新变量列表" disabled={busy || refreshing} onClick={refresh}>
             <RefreshCw size={14} className={refreshing ? 'spinning' : ''} />
           </button>
-          <div className="mode-switch" role="tablist" aria-label="操作模式">
+          <div className={`mode-switch ${mode}`} role="tablist" aria-label="操作模式">
             <button className={mode === 'copy' ? 'active' : ''} onClick={() => { setMessage(''); setMode('copy'); }}>复制</button>
             <button className={mode === 'paste' ? 'active' : ''} disabled={!hasClipboard} onClick={() => { setMessage(''); setMode('paste'); }}>粘贴</button>
           </div>

@@ -36,18 +36,34 @@ body { margin: 0; min-width: 280px; overflow: hidden; background: var(--surface)
 button { font: inherit; color: inherit; }
 .app-shell { display: flex; flex-direction: column; height: 100vh; background: var(--surface); }
 .app-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-h1 { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; margin: 0; font-weight: 650; letter-spacing: 0; }
+h1 { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; margin: 0; font-weight: 500; letter-spacing: 0; }
 .header-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
-.refresh-button { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.refresh-button { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--text-muted); cursor: pointer; }
 .refresh-button:hover:not(:disabled) { color: var(--text); background: var(--surface-hover); }
 .refresh-button:disabled { opacity: .45; cursor: default; }
 .refresh-button .spinning { animation: refresh-spin .75s linear infinite; }
 @keyframes refresh-spin { to { transform: rotate(360deg); } }
-.mode-switch { display: flex; padding: 2px; gap: 2px; border-radius: 6px; background: var(--surface-muted); }
-.mode-switch button { border: 0; border-radius: 4px; background: transparent; padding: 5px 9px; cursor: pointer; color: var(--text-muted); }
-.mode-switch button.active { color: var(--text); background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / 12%); }
+.mode-switch { position: relative; display: flex; padding: 2px; gap: 2px; border-radius: 4px; background: var(--surface-muted); overflow: hidden; }
+.mode-switch::before { content: ''; position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc((100% - 6px) / 2); border-radius: 2px; background: var(--surface); box-shadow: 0 1px 2px rgb(0 0 0 / 12%); transform: translateX(0); transition: transform 180ms ease; }
+.mode-switch.paste::before { transform: translateX(calc(100% + 2px)); }
+.mode-switch button { position: relative; z-index: 1; width: 42px; border: 0; border-radius: 2px; background: transparent; padding: 5px 0; cursor: pointer; color: var(--text-muted); transition: color 140ms ease; }
+.mode-switch button:hover:not(:disabled) { color: var(--text); }
+.mode-switch button.active { color: var(--text); }
 .mode-switch button:disabled { opacity: .42; cursor: default; }
-.tree-panel { flex: 1; overflow: auto; padding: 7px 0; }
+.tree-panel { flex: 1; overflow: auto; padding: 7px 0; scrollbar-width: thin; scrollbar-color: var(--surface-muted) transparent; }
+.tree-panel::-webkit-scrollbar { width: 8px; height: 8px; }
+.tree-panel::-webkit-scrollbar-track { background: transparent; }
+.tree-panel::-webkit-scrollbar-thumb { background: var(--surface-muted); border-radius: 4px; }
+.tree-panel::-webkit-scrollbar-button,
+.tree-panel::-webkit-scrollbar-button:single-button,
+.tree-panel::-webkit-scrollbar-button:vertical:decrement,
+.tree-panel::-webkit-scrollbar-button:vertical:increment {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  background: transparent !important;
+}
 .tree-row { display: flex; align-items: center; min-height: 30px; padding-right: 14px; gap: 6px; }
 .tree-row:hover { background: var(--surface-hover); }
 .chevron, .chevron-placeholder { flex: 0 0 16px; width: 16px; height: 20px; display: grid; place-items: center; }
@@ -57,7 +73,7 @@ h1 { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-spa
 .node-icon.collection { color: var(--accent); }
 .node-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 .node-detail { flex: 0 0 auto; color: var(--text-muted); font-size: 10px; }
-.check { flex: 0 0 16px; width: 16px; height: 16px; padding: 0; border: 1px solid #a7a7a7; border-radius: 3px; background: transparent; cursor: pointer; font-size: 11px; line-height: 14px; text-align: center; }
+.check { flex: 0 0 16px; width: 16px; height: 16px; padding: 0; border: 1px solid #a7a7a7; border-radius: 2px; background: transparent; cursor: pointer; font-size: 11px; line-height: 14px; text-align: center; }
 .check.checked, .check.mixed { border-color: var(--accent); background: var(--accent); color: white; }
 .check.mixed { font-size: 14px; line-height: 12px; }
 .empty-state { height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 7px; padding: 24px; text-align: center; color: var(--text-muted); }
@@ -67,5 +83,5 @@ h1 { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-spa
 .app-footer { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); padding: 10px 14px; }
 .select-all-control { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; color: var(--text); white-space: nowrap; }
 .footer-status { flex: 1; min-width: 0; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
-.primary-action { flex: 0 0 auto; border: 0; border-radius: 5px; background: var(--accent); color: white; padding: 7px 18px; font-weight: 600; cursor: pointer; min-width: 68px; }
+.primary-action { flex: 0 0 auto; border: 0; border-radius: 4px; background: var(--accent); color: white; padding: 7px 18px; font-weight: 600; cursor: pointer; min-width: 68px; }
 .primary-action:disabled { opacity: .45; cursor: default; }

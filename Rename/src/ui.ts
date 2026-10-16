@@ -11,6 +11,7 @@ import {
   type ReplaceConfig,
   type TokenKind
 } from "./shared/rename";
+import { buildTextResults, validateTextConfig } from "./shared/text";
 
 const quickConfig: QuickRenameConfig = {
   baseName: "",
@@ -19,17 +20,20 @@ const quickConfig: QuickRenameConfig = {
   tokenOrder: []
 };
 const replaceConfig: ReplaceConfig = { searchText: "", replacementText: "" };
+const textConfig: ReplaceConfig = { searchText: "", replacementText: "" };
 
 let mode: RenameMode = "quick";
-let snapshot: SelectionSnapshot = { targets: [], ignoredCount: 0, selectionCount: 0 };
+let snapshot: SelectionSnapshot = { targets: [], textTargets: [], ignoredCount: 0, selectionCount: 0 };
 let currentResults: RenameResult[] = [];
 let executing = false;
 
 const elements = {
   quickTab: byId<HTMLButtonElement>("quick-tab"),
   replaceTab: byId<HTMLButtonElement>("replace-tab"),
+  textTab: byId<HTMLButtonElement>("text-tab"),
   quickPanel: byId<HTMLElement>("quick-panel"),
   replacePanel: byId<HTMLElement>("replace-panel"),
+  textPanel: byId<HTMLElement>("text-panel"),
   baseName: byId<HTMLInputElement>("base-name"),
   numberDigits: byId<HTMLInputElement>("number-digits"),
   letterWidth: byId<HTMLInputElement>("letter-width"),
@@ -37,6 +41,8 @@ const elements = {
   toggleLetter: byId<HTMLButtonElement>("toggle-letter"),
   searchText: byId<HTMLInputElement>("search-text"),
   replacementText: byId<HTMLInputElement>("replacement-text"),
+  textSearch: byId<HTMLInputElement>("text-search"),
+  textReplacement: byId<HTMLInputElement>("text-replacement"),
   previewList: byId<HTMLElement>("preview-list"),
   selectionMeta: byId<HTMLElement>("selection-meta"),
   syncLayerName: byId<HTMLInputElement>("sync-layer-name"),
@@ -57,7 +63,7 @@ window.onmessage = (event: MessageEvent<{ pluginMessage?: PluginToUIMessage }>) 
     render();
   } else if (message.type === "RENAME_SUCCEEDED") {
     executing = false;
-    elements.statusMessage.textContent = `已重命名 ${message.payload.changedCount} 个画板`;
+    elements.statusMessage.textContent = `已更新 ${message.payload.changedCount} 个图层`;
     render();
   } else if (message.type === "RENAME_FAILED") {
     executing = false;
@@ -69,6 +75,7 @@ window.onmessage = (event: MessageEvent<{ pluginMessage?: PluginToUIMessage }>) 
 function bindEvents(): void {
   elements.quickTab.addEventListener("click", () => setMode("quick"));
   elements.replaceTab.addEventListener("click", () => setMode("replace"));
+  elements.textTab.addEventListener("click", () => setMode("text"));
 
   elements.baseName.addEventListener("input", () => {
     quickConfig.baseName = elements.baseName.value;
@@ -97,6 +104,24 @@ function bindEvents(): void {
   elements.replacementText.addEventListener("input", () => {
     replaceConfig.replacementText = elements.replacementText.value;
     render();
+  });
+  elements.textSearch.addEventListener("input", () => {
+    textConfig.searchText = elements.textSearch.value;
+    render();
+  });
+  elements.textReplacement.addEventListener("input", () => {
+    textConfig.replacementText = elements.textReplacement.value;
+    render();
+  });
+  document.querySelectorAll<HTMLButtonElement>(".input-clear").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.dataset.clearTarget;
+      if (!targetId) return;
+      const input = byId<HTMLInputElement>(targetId);
+      input.value = "";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.focus();
+    });
   });
 
   elements.toggleNumber.addEventListener("click", () => toggleToken("number"));
@@ -127,19 +152,24 @@ function bindEvents(): void {
 
   elements.confirmButton.addEventListener("click", executeRename);
   document.addEventListener("keydown", (event) => {
+    if (event.target instanceof Element && event.target.closest(".input-clear")) return;
     if (event.key === "Enter" && !event.isComposing && !elements.confirmButton.disabled) executeRename();
   });
 }
 
 function setMode(nextMode: RenameMode): void {
   mode = nextMode;
-  const quickActive = mode === "quick";
-  elements.quickTab.classList.toggle("is-active", quickActive);
-  elements.quickTab.setAttribute("aria-selected", String(quickActive));
-  elements.replaceTab.classList.toggle("is-active", !quickActive);
-  elements.replaceTab.setAttribute("aria-selected", String(!quickActive));
-  elements.quickPanel.hidden = !quickActive;
-  elements.replacePanel.hidden = quickActive;
+  const panels = [
+    { mode: "quick", tab: elements.quickTab, panel: elements.quickPanel },
+    { mode: "replace", tab: elements.replaceTab, panel: elements.replacePanel },
+    { mode: "text", tab: elements.textTab, panel: elements.textPanel }
+  ];
+  for (const item of panels) {
+    const active = mode === item.mode;
+    item.tab.classList.toggle("is-active", active);
+    item.tab.setAttribute("aria-selected", String(active));
+    item.panel.hidden = !active;
+  }
   render();
 }
 
@@ -164,29 +194,48 @@ function toggleToken(kind: TokenKind): void {
 }
 
 function render(): void {
-  elements.toggleNumber.textContent = quickConfig.number.enabled ? "移除" : "添加";
+  document.querySelectorAll<HTMLButtonElement>(".input-clear").forEach((button) => {
+    const targetId = button.dataset.clearTarget;
+    button.hidden = !targetId || byId<HTMLInputElement>(targetId).value.length === 0;
+    button.parentElement?.classList.toggle("has-value", !button.hidden);
+  });
+  elements.toggleNumber.setAttribute("aria-label", quickConfig.number.enabled ? "移除数字" : "添加数字");
+  elements.toggleNumber.title = quickConfig.number.enabled ? "移除数字" : "添加数字";
   elements.toggleNumber.classList.toggle("is-added", quickConfig.number.enabled);
-  elements.toggleLetter.textContent = quickConfig.letter.enabled ? "移除" : "添加";
+  elements.toggleNumber.disabled = !quickConfig.number.enabled && !isValidWidth(quickConfig.number.digits, 32);
+  elements.toggleLetter.setAttribute("aria-label", quickConfig.letter.enabled ? "移除字母" : "添加字母");
+  elements.toggleLetter.title = quickConfig.letter.enabled ? "移除字母" : "添加字母";
   elements.toggleLetter.classList.toggle("is-added", quickConfig.letter.enabled);
+  elements.toggleLetter.disabled = !quickConfig.letter.enabled && !isValidWidth(quickConfig.letter.width, 10);
 
-  const ignoredText = snapshot.ignoredCount > 0 ? ` · 忽略 ${snapshot.ignoredCount} 个` : "";
-  elements.selectionMeta.textContent = `${snapshot.targets.length} 个画板${ignoredText}`;
+  const targetCount = mode === "text" ? snapshot.textTargets.length : snapshot.targets.length;
+  const ignoredCount = mode === "text" ? 0 : snapshot.ignoredCount;
+  const ignoredText = ignoredCount > 0 ? ` · 忽略 ${ignoredCount} 个` : "";
+  elements.selectionMeta.textContent = `${targetCount} 个${mode === "text" ? "文本图层" : "画板"}${ignoredText}`;
   elements.previewList.replaceChildren();
 
-  const validation = mode === "quick" ? validateQuickConfig(quickConfig) : validateReplaceConfig(replaceConfig);
+  const validation = mode === "quick" ? validateQuickConfig(quickConfig)
+    : mode === "text" ? validateTextConfig(textConfig) : validateReplaceConfig(replaceConfig);
   currentResults = [];
 
-  if (snapshot.targets.length === 0) {
-    appendPlaceholder("选择画板后显示预览");
+  if (targetCount === 0) {
+    appendPlaceholder(mode === "text" ? "选择包含文本的图层后显示预览" : "选择画板后显示预览");
   } else if (!validation.valid) {
     appendPlaceholder("完善命名规则后显示预览");
   } else {
-    currentResults = buildRenameResults(snapshot.targets, mode, quickConfig, replaceConfig);
+    currentResults = mode === "text"
+      ? buildTextResults(snapshot.textTargets, textConfig, elements.syncLayerName.checked).map((result) => ({
+          id: result.id,
+          originalName: result.originalText,
+          nextName: result.nextText,
+          changed: result.changed
+        }))
+      : buildRenameResults(snapshot.targets, mode, quickConfig, replaceConfig);
     renderResultNames(currentResults);
   }
 
   const hasChanges = currentResults.some((result) => result.changed);
-  elements.confirmButton.disabled = executing || !validation.valid || snapshot.targets.length === 0 || !hasChanges;
+  elements.confirmButton.disabled = executing || !validation.valid || targetCount === 0 || !hasChanges;
   elements.confirmButton.textContent = executing ? "处理中…" : "确定";
 }
 
@@ -194,13 +243,14 @@ function renderResultNames(results: RenameResult[]): void {
   results.slice(0, 6).forEach((result, index) => {
     const item = document.createElement("span");
     item.className = "preview-item";
-    item.textContent = result.nextName;
+    const previewText = mode === "text" && !result.nextName ? "（空文本）" : result.nextName;
+    item.textContent = previewText;
     item.title = result.nextName;
     if (index === 5 && results.length > 6) {
       item.classList.add("has-more");
       const name = document.createElement("span");
       name.className = "preview-name";
-      name.textContent = result.nextName;
+      name.textContent = previewText;
       const more = document.createElement("span");
       more.className = "preview-more";
       more.textContent = "…";
@@ -230,6 +280,7 @@ function executeRename(): void {
       mode,
       quick: structuredCloneSafe(quickConfig),
       replace: { ...replaceConfig },
+      text: { ...textConfig },
       syncLayerName: elements.syncLayerName.checked
     }
   });
@@ -244,6 +295,10 @@ function parseWidth(value: string): number | null {
   if (!value.trim()) return null;
   const parsed = Number(value);
   return Number.isInteger(parsed) ? parsed : null;
+}
+
+function isValidWidth(value: number | null, maximum: number): boolean {
+  return value !== null && Number.isInteger(value) && value >= 1 && value <= maximum;
 }
 
 function structuredCloneSafe(config: QuickRenameConfig): QuickRenameConfig {

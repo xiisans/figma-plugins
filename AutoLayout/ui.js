@@ -7,8 +7,15 @@
   var applyButton = document.getElementById('apply');
   var feedback = document.getElementById('feedback');
   var locked = { vertical: false, horizontal: false };
+  var hasSelection = false;
+  var isApplying = false;
   var resizeFrame = 0;
   var lastHeight = 0;
+
+  function renderApplyButton() {
+    applyButton.disabled = !hasSelection || isApplying;
+    applyButton.querySelector('span').textContent = hasSelection ? '确定' : '请选择画板';
+  }
 
   function reportSize() {
     resizeFrame = 0;
@@ -71,6 +78,7 @@
   });
 
   applyButton.addEventListener('click', function () {
+    if (!hasSelection || isApplying) return;
     var values = {};
     var invalid = false;
     ids.forEach(function (id) {
@@ -82,7 +90,8 @@
       setFeedback('请填写 0 到 10000 之间的非负整数。', 'error');
       return;
     }
-    applyButton.disabled = true;
+    isApplying = true;
+    renderApplyButton();
     setFeedback('');
     parent.postMessage({ pluginMessage: { type: 'apply', values: values } }, '*');
   });
@@ -90,13 +99,21 @@
   window.onmessage = function (event) {
     var message = event.data && event.data.pluginMessage;
     if (!message) return;
+    if (message.type === 'selection-state') {
+      hasSelection = Boolean(message.hasSelection);
+      renderApplyButton();
+      if (!hasSelection) setFeedback('');
+      return;
+    }
     if (message.type === 'complete') {
-      applyButton.disabled = false;
+      isApplying = false;
+      renderApplyButton();
       setFeedback('');
       return;
     }
     if (message.type !== 'result') return;
-    applyButton.disabled = false;
+    isApplying = false;
+    renderApplyButton();
     if (message.summary && (message.summary.skipped || message.summary.failed)) {
       var lines = ['成功 ' + message.summary.success + '，跳过 ' + message.summary.skipped + '，失败 ' + message.summary.failed + '。'];
       (message.items || []).forEach(function (item) {
@@ -108,4 +125,7 @@
       setFeedback(message.message || '处理完成。', message.ok ? 'success' : 'error');
     }
   };
+
+  renderApplyButton();
+  parent.postMessage({ pluginMessage: { type: 'ui-ready' } }, '*');
 })();

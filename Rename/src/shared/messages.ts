@@ -1,7 +1,9 @@
 import type { QuickRenameConfig, RenameMode, RenameTarget, ReplaceConfig } from "./rename";
+import type { TextTarget } from "./text";
 
 export interface SelectionSnapshot {
   targets: RenameTarget[];
+  textTargets: TextTarget[];
   ignoredCount: number;
   selectionCount: number;
 }
@@ -10,6 +12,7 @@ export interface ExecuteRenamePayload {
   mode: RenameMode;
   quick: QuickRenameConfig;
   replace: ReplaceConfig;
+  text: ReplaceConfig;
   syncLayerName: boolean;
 }
 

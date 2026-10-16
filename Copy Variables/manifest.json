@@ -1,5 +1,5 @@
 {
-  "name": "自由复制变量",
+  "name": "西西变量拷贝",
   "id": "free-copy-variables",
   "api": "1.0.0",
   "main": "dist/code.js",

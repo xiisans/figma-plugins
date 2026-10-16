@@ -1,8 +1,16 @@
 "use strict";
-const UI_WIDTH = 340;
-const UI_MIN_HEIGHT = 280;
+const UI_WIDTH = 360;
+const UI_MIN_HEIGHT = 220;
 const UI_MAX_HEIGHT = 520;
 figma.showUI(__html__, { width: UI_WIDTH, height: UI_MIN_HEIGHT, themeColors: true });
+function postSelectionState() {
+    figma.ui.postMessage({
+        type: 'selection-state',
+        hasSelection: figma.currentPage.selection.length > 0
+    });
+}
+figma.on('selectionchange', postSelectionState);
+postSelectionState();
 function resizeUI(height) {
     const numericHeight = typeof height === 'number' && Number.isFinite(height) ? Math.ceil(height) : UI_MIN_HEIGHT;
     const nextHeight = Math.max(UI_MIN_HEIGHT, Math.min(UI_MAX_HEIGHT, numericHeight));
@@ -166,6 +174,10 @@ function validateValues(values) {
     return null;
 }
 figma.ui.onmessage = (message) => {
+    if (message && message.type === 'ui-ready') {
+        postSelectionState();
+        return;
+    }
     if (message && message.type === 'resize') {
         resizeUI(message.height);
         return;
@@ -179,13 +191,8 @@ figma.ui.onmessage = (message) => {
     }
     const selection = [...figma.currentPage.selection];
     if (selection.length === 0) {
-        figma.ui.postMessage({
-            type: 'result',
-            ok: false,
-            message: '请先在画布中选择至少一个元素。',
-            summary: { success: 0, skipped: 0, failed: 0, total: 0 },
-            items: []
-        });
+        postSelectionState();
+        figma.ui.postMessage({ type: 'complete' });
         return;
     }
     const items = [];
@@ -197,6 +204,7 @@ figma.ui.onmessage = (message) => {
             outputs.push(result.output);
     }
     figma.currentPage.selection = outputs;
+    postSelectionState();
     const summary = {
         success: items.filter((item) => item.status === 'success').length,
         skipped: items.filter((item) => item.status === 'skipped').length,

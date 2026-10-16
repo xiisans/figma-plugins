@@ -55,6 +55,7 @@ function boot(selection) {
   const figma = {
     currentPage,
     ui: { onmessage: null, postMessage(message) { posted.push(message); } },
+    on() {},
     showUI() {},
     createFrame() { return makeContainer('FRAME', 'Frame ' + (++frameCounter)); },
     commitUndo() { this.undoCommits = (this.undoCommits || 0) + 1; }
@@ -119,7 +120,9 @@ const values = { top: 10, right: 20, bottom: 30, left: 40, gap: 8 };
 {
   const { figma, posted } = boot([]);
   figma.ui.onmessage({ type: 'apply', values });
-  assert.equal(posted.at(-1).summary.total, 0);
+  assert.equal(posted.at(-1).type, 'complete');
+  assert.equal(posted.some((message) => message.type === 'result'), false);
+  assert.equal(posted.filter((message) => message.type === 'selection-state').at(-1).hasSelection, false);
 }
 
 console.log('Smoke tests passed.');

@@ -3,23 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>批量自动布局</title>
+    <title>西西自动布局</title>
     <link rel="stylesheet" href="ui.css" />
   </head>
   <body>
     <main class="panel">
-      <header class="header">
-        <div>
-          <h1>批量自动布局</h1>
-          <p>分别为选中元素应用 Auto Layout</p>
-        </div>
-        <span class="status-dot" aria-hidden="true"></span>
-      </header>
-
       <section class="section" aria-labelledby="padding-title">
         <div class="section-heading">
           <h2 id="padding-title">Padding</h2>
-          <span>px</span>
         </div>
         <div class="padding-grid">
           <label class="field field-top">
@@ -31,18 +22,28 @@
             <input id="bottom" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
           </label>
           <div class="lock-cell">
-            <button id="vertical-lock" class="lock-button" type="button" aria-pressed="false" title="锁定上下 Padding">↕</button>
+            <button id="vertical-lock" class="lock-button" type="button" aria-pressed="false" aria-label="锁定上下 Padding" title="锁定上下 Padding">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+            </button>
           </div>
-          <label class="field field-right">
-            <span>左</span>
-            <input id="right" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
-          </label>
           <label class="field field-left">
-            <span>右</span>
+            <span>左</span>
             <input id="left" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
           </label>
+          <label class="field field-right">
+            <span>右</span>
+            <input id="right" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
+          </label>
           <div class="lock-cell">
-            <button id="horizontal-lock" class="lock-button" type="button" aria-pressed="false" title="锁定左右 Padding">↔</button>
+            <button id="horizontal-lock" class="lock-button" type="button" aria-pressed="false" aria-label="锁定左右 Padding" title="锁定左右 Padding">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+            </button>
           </div>
         </div>
       </section>
@@ -55,11 +56,9 @@
       </section>
 
       <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
-      <button id="apply" class="apply-button" type="button">
-        <span>确定</span>
-        <span class="apply-arrow" aria-hidden="true">&#8594;</span>
+      <button id="apply" class="apply-button" type="button" disabled>
+        <span>请选择画板</span>
       </button>
-      <!-- <p class="hint">已有 Auto Layout 的节点会直接更新，普通元素会创建独立包装 Frame。</p> -->
     </main>
     <script src="ui.js"></script>
   </body>

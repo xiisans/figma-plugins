@@ -3,84 +3,148 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>批量自动布局</title>
+    <title>西西自动布局</title>
     <style>
 :root {
-  color-scheme: light;
-  --bg: #f7f8fa;
-  --surface: #ffffff;
-  --text: #202124;
-  --muted: #737780;
-  --line: #e1e3e8;
-  --accent: #18a875;
-  --accent-soft: #e7f7f0;
-  --danger: #bf3d46;
-  --danger-soft: #fff0f1;
+  color-scheme: light dark;
+  --bg: var(--figma-color-bg, #ffffff);
+  --surface: var(--figma-color-bg-secondary, #f2f2f2);
+  --surface-hover: var(--figma-color-bg-hover, #e8e8e8);
+  --text: var(--figma-color-text, #1e1e1e);
+  --muted: var(--figma-color-text-secondary, #6b6b6b);
+  --field-label: #6f6f6f;
+  --control-muted: #6f6f6f;
+  --disabled: var(--figma-color-text-disabled, #b3b3b3);
+  --accent: #4567ff;
+  --accent-hover: #5271ff;
+  --accent-soft: rgba(69, 103, 255, 0.14);
+  --warning: #f49b00;
+  --danger: #ef4343;
+  --danger-hover: #ef4d4d;
+  --danger-soft: rgba(239, 67, 67, 0.12);
+  --radius: 4px;
 }
 
 * { box-sizing: border-box; }
 
+html, body { margin: 0; min-width: 320px; background: var(--bg); }
+
 body {
-  margin: 0;
-  min-width: 300px;
-  background: var(--bg);
   color: var(--text);
   font: 12px/1.4 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.panel { padding: 20px 18px 16px; }
-.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-.header h1 { margin: 0 0 4px; font-size: 18px; line-height: 1.2; letter-spacing: 0; font-weight: 700; }
-.header p { margin: 0; color: var(--muted); font-size: 11px; }
-.status-dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-.section { border-top: 1px solid var(--line); padding-top: 14px; }
-.section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.section-heading h2 { margin: 0; font-size: 12px; font-weight: 700; }
-.section-heading span { color: var(--muted); font-size: 11px; }
-.padding-grid { display: grid; grid-template-columns: 1fr 1fr 34px; gap: 10px 8px; align-items: end; }
-.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.field > span { color: var(--muted); font-size: 11px; }
-input { width: 100%; height: 32px; border: 1px solid var(--line); border-radius: 6px; padding: 0 9px; outline: none; background: var(--surface); color: var(--text); font: inherit; transition: border-color .15s, box-shadow .15s; }
-input:hover { border-color: #c5c8ce; }
-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-input.invalid { border-color: var(--danger); background: var(--danger-soft); }
-.lock-cell { display: flex; align-items: flex-end; justify-content: center; height: 52px; }
-.lock-button { width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--muted); cursor: pointer; font-size: 17px; line-height: 1; }
-.lock-button:hover { border-color: #b7bbc2; color: var(--text); }
-.lock-button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
-.gap-section { margin-top: 16px; }
-.wide-field { max-width: 140px; }
-.feedback { min-height: 0; margin: 0; padding: 0; border-radius: 6px; color: var(--muted); background: transparent; font-size: 11px; }
-.feedback:not(:empty) { min-height: 38px; margin: 12px 0 8px; padding: 9px 10px; background: #eef1f4; }
+button, input { font: inherit; }
+
+.panel { padding: 12px 16px 16px; }
+.section { padding: 0; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; min-height: 20px; }
+.section-heading h2 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0; }
+.section-heading span { color: var(--muted); font-size: 12px; }
+.padding-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px; gap: 8px; align-items: end; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field > span { color: var(--field-label); font-size: 12px; line-height: 16px; }
+
+input {
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0 8px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text);
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+input:hover { background: var(--surface-hover); }
+input:focus { box-shadow: 0 0 0 2px var(--accent-soft); }
+input.invalid { background: var(--danger-soft); box-shadow: 0 0 0 1px var(--danger); }
+
+.lock-cell { display: flex; align-items: flex-end; justify-content: center; height: 56px; }
+.lock-button {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  background: var(--surface);
+  color: var(--control-muted);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.lock-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.lock-button:hover { background: var(--surface-hover); color: var(--text); }
+.lock-button:focus-visible { box-shadow: 0 0 0 2px var(--accent-soft); }
+.lock-button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+
+.gap-section { margin-top: 12px; }
+.wide-field { max-width: none; }
+.feedback { min-height: 0; margin: 0; padding: 0; border-radius: var(--radius); color: var(--muted); font-size: 12px; }
+.feedback:not(:empty) { min-height: 32px; margin: 8px 0 0; padding: 8px; background: var(--surface); }
 .feedback.error { color: var(--danger); background: var(--danger-soft); }
-.feedback.success { color: #11734f; background: var(--accent-soft); }
-.apply-button { width: 100%; height: 36px; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 7px; background: var(--accent); color: white; cursor: pointer; font: inherit; font-weight: 700; }
-.apply-button:hover { background: #128c62; }
-.apply-button:active { transform: translateY(1px); }
-.apply-button:disabled { opacity: .6; cursor: wait; }
-.apply-arrow { font-size: 15px; }
-.hint { margin: 10px 0 0; color: var(--muted); font-size: 10px; text-align: center; }
+.feedback.success { color: var(--accent); background: var(--accent-soft); }
+
+.apply-button {
+  width: 100%;
+  height: 36px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius);
+  outline: none;
+  background: var(--accent);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 120ms ease, opacity 120ms ease;
+}
+
+.apply-button:hover { background: var(--accent-hover); }
+.apply-button span { font-size: 13px; }
+.apply-button:focus-visible { box-shadow: 0 0 0 2px var(--accent-soft); }
+.apply-button:active { background: var(--accent); }
+.apply-button:disabled { background: var(--surface); color: var(--disabled); cursor: wait; }
 
 @media (prefers-color-scheme: dark) {
-  :root { color-scheme: dark; --bg: #252627; --surface: #303133; --text: #f1f2f3; --muted: #a5a8ad; --line: #484a4f; --accent-soft: #173d31; --danger-soft: #45282b; }
+  :root {
+    --bg: var(--figma-color-bg, #2c2c2c);
+    --surface: var(--figma-color-bg-secondary, #383838);
+    --surface-hover: var(--figma-color-bg-hover, #444444);
+    --text: var(--figma-color-text, #ffffff);
+    --muted: var(--figma-color-text-secondary, #b3b3b3);
+    --field-label: #a3a3a3;
+    --control-muted: #a3a3a3;
+    --disabled: var(--figma-color-text-disabled, #6b6b6b);
+  }
 }
 
     </style>
   </head>
   <body>
     <main class="panel">
-      <header class="header">
-        <div>
-          <h1>批量自动布局</h1>
-          <p>分别为选中元素应用 Auto Layout</p>
-        </div>
-        <span class="status-dot" aria-hidden="true"></span>
-      </header>
-
       <section class="section" aria-labelledby="padding-title">
         <div class="section-heading">
-          <h2 id="padding-title">边距</h2>
-          <span>px</span>
+          <h2 id="padding-title">Padding</h2>
         </div>
         <div class="padding-grid">
           <label class="field field-top">
@@ -92,18 +156,28 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
             <input id="bottom" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
           </label>
           <div class="lock-cell">
-            <button id="vertical-lock" class="lock-button" type="button" aria-pressed="false" title="锁定上下 Padding">↕</button>
+            <button id="vertical-lock" class="lock-button" type="button" aria-pressed="false" aria-label="锁定上下 Padding" title="锁定上下 Padding">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+            </button>
           </div>
-          <label class="field field-right">
-            <span>左</span>
-            <input id="right" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
-          </label>
           <label class="field field-left">
-            <span>右</span>
+            <span>左</span>
             <input id="left" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
           </label>
+          <label class="field field-right">
+            <span>右</span>
+            <input id="right" type="number" min="0" max="10000" step="1" value="16" inputmode="numeric" />
+          </label>
           <div class="lock-cell">
-            <button id="horizontal-lock" class="lock-button" type="button" aria-pressed="false" title="锁定左右 Padding">↔</button>
+            <button id="horizontal-lock" class="lock-button" type="button" aria-pressed="false" aria-label="锁定左右 Padding" title="锁定左右 Padding">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+            </button>
           </div>
         </div>
       </section>
@@ -116,11 +190,9 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
       </section>
 
       <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
-      <button id="apply" class="apply-button" type="button">
-        <span>确定</span>
-        <span class="apply-arrow" aria-hidden="true">&#8594;</span>
+      <button id="apply" class="apply-button" type="button" disabled>
+        <span>请选择画板</span>
       </button>
-      <!-- <p class="hint">已有 Auto Layout 的节点会直接更新，普通元素会创建独立包装 Frame。</p> -->
     </main>
     <script>
 (function () {
@@ -132,8 +204,15 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
   var applyButton = document.getElementById('apply');
   var feedback = document.getElementById('feedback');
   var locked = { vertical: false, horizontal: false };
+  var hasSelection = false;
+  var isApplying = false;
   var resizeFrame = 0;
   var lastHeight = 0;
+
+  function renderApplyButton() {
+    applyButton.disabled = !hasSelection || isApplying;
+    applyButton.querySelector('span').textContent = hasSelection ? '确定' : '请选择画板';
+  }
 
   function reportSize() {
     resizeFrame = 0;
@@ -196,6 +275,7 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
   });
 
   applyButton.addEventListener('click', function () {
+    if (!hasSelection || isApplying) return;
     var values = {};
     var invalid = false;
     ids.forEach(function (id) {
@@ -207,7 +287,8 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
       setFeedback('请填写 0 到 10000 之间的非负整数。', 'error');
       return;
     }
-    applyButton.disabled = true;
+    isApplying = true;
+    renderApplyButton();
     setFeedback('');
     parent.postMessage({ pluginMessage: { type: 'apply', values: values } }, '*');
   });
@@ -215,13 +296,21 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
   window.onmessage = function (event) {
     var message = event.data && event.data.pluginMessage;
     if (!message) return;
+    if (message.type === 'selection-state') {
+      hasSelection = Boolean(message.hasSelection);
+      renderApplyButton();
+      if (!hasSelection) setFeedback('');
+      return;
+    }
     if (message.type === 'complete') {
-      applyButton.disabled = false;
+      isApplying = false;
+      renderApplyButton();
       setFeedback('');
       return;
     }
     if (message.type !== 'result') return;
-    applyButton.disabled = false;
+    isApplying = false;
+    renderApplyButton();
     if (message.summary && (message.summary.skipped || message.summary.failed)) {
       var lines = ['成功 ' + message.summary.success + '，跳过 ' + message.summary.skipped + '，失败 ' + message.summary.failed + '。'];
       (message.items || []).forEach(function (item) {
@@ -233,6 +322,9 @@ input.invalid { border-color: var(--danger); background: var(--danger-soft); }
       setFeedback(message.message || '处理完成。', message.ok ? 'success' : 'error');
     }
   };
+
+  renderApplyButton();
+  parent.postMessage({ pluginMessage: { type: 'ui-ready' } }, '*');
 })();
 
     </script>

@@ -3,59 +3,153 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>批量重命名</title>
+    <title>西西重命名</title>
     <style>
 /*__STYLES__*/
     </style>
   </head>
   <body>
+    <!-- Icons: https://feathericons.com/ (arrow-up, arrow-down, check, plus, x). -->
     <main class="app-shell">
       <header class="tabs" role="tablist" aria-label="重命名模式">
         <button id="quick-tab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="quick-panel">快速命名</button>
         <button id="replace-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="replace-panel">选择替换</button>
+        <button id="text-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="text-panel">文本命名</button>
       </header>
 
       <section class="content">
         <div id="quick-panel" class="mode-panel" role="tabpanel" aria-labelledby="quick-tab">
-          <label class="field">
-            <span class="field-label">画板名称</span>
-            <input id="base-name" class="text-input" type="text" placeholder="请输入画板名称" autocomplete="off" />
-          </label>
+          <div class="field">
+            <label class="field-label" for="base-name">画板名称</label>
+            <div class="input-shell">
+              <input id="base-name" class="text-input" type="text" placeholder="请输入画板名称" autocomplete="off" />
+              <button class="input-clear" type="button" data-clear-target="base-name" aria-label="清除画板名称" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
 
           <div class="field-group">
             <div class="field-label">添加数字或字母</div>
             <div class="sequence-row">
-              <input id="number-digits" class="sequence-input" type="number" min="1" max="32" inputmode="numeric" placeholder="数字位数" />
-              <div class="segmented" aria-label="数字排序">
-                <button class="segment is-active" type="button" data-number-direction="asc">升序</button>
-                <button class="segment" type="button" data-number-direction="desc">降序</button>
+              <div class="input-shell">
+                <input id="number-digits" class="sequence-input" type="number" min="1" max="32" inputmode="numeric" placeholder="数字位数" />
+                <button class="input-clear" type="button" data-clear-target="number-digits" aria-label="清除数字位数" title="清除" hidden>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
               </div>
-              <button id="toggle-number" class="add-button" type="button">添加</button>
+              <div class="segmented" aria-label="数字排序">
+                <button class="segment is-active" type="button" data-number-direction="asc" aria-label="升序" title="升序">
+                  <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                  </svg>
+                </button>
+                <button class="segment" type="button" data-number-direction="desc" aria-label="降序" title="降序">
+                  <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+              <button id="toggle-number" class="add-button" type="button" aria-label="添加数字" title="添加数字">
+                <svg class="add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span class="remove-label">移除</span>
+              </button>
             </div>
             <div class="sequence-row letter-row">
-              <input id="letter-width" class="sequence-input" type="number" min="1" max="10" inputmode="numeric" placeholder="字母位数" />
+              <div class="input-shell">
+                <input id="letter-width" class="sequence-input" type="number" min="1" max="10" inputmode="numeric" placeholder="字母位数" />
+                <button class="input-clear" type="button" data-clear-target="letter-width" aria-label="清除字母位数" title="清除" hidden>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
               <div class="segmented" aria-label="字母大小写">
-                <button class="segment is-active" type="button" data-letter-case="upper">大写</button>
-                <button class="segment" type="button" data-letter-case="lower">小写</button>
+                <button class="segment is-active" type="button" data-letter-case="upper" aria-label="大写">A</button>
+                <button class="segment" type="button" data-letter-case="lower" aria-label="小写">a</button>
               </div>
               <div class="segmented" aria-label="字母排序">
-                <button class="segment is-active" type="button" data-letter-direction="asc">升序</button>
-                <button class="segment" type="button" data-letter-direction="desc">降序</button>
+                <button class="segment is-active" type="button" data-letter-direction="asc" aria-label="升序" title="升序">
+                  <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                  </svg>
+                </button>
+                <button class="segment" type="button" data-letter-direction="desc" aria-label="降序" title="降序">
+                  <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <polyline points="19 12 12 19 5 12"></polyline>
+                  </svg>
+                </button>
               </div>
-              <button id="toggle-letter" class="add-button" type="button">添加</button>
+              <button id="toggle-letter" class="add-button" type="button" aria-label="添加字母" title="添加字母">
+                <svg class="add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span class="remove-label">移除</span>
+              </button>
             </div>
           </div>
         </div>
 
         <div id="replace-panel" class="mode-panel" role="tabpanel" aria-labelledby="replace-tab" hidden>
-          <label class="field">
-            <span class="field-label">输入文字</span>
-            <input id="search-text" class="text-input" type="text" placeholder="请输入要替换的文字" autocomplete="off" />
-          </label>
-          <label class="field">
-            <span class="field-label">替换文字</span>
-            <input id="replacement-text" class="text-input" type="text" placeholder="请输入替换成的文字（留空表示删除）" autocomplete="off" />
-          </label>
+          <div class="field">
+            <label class="field-label" for="search-text">输入文字</label>
+            <div class="input-shell">
+              <input id="search-text" class="text-input" type="text" placeholder="请输入要替换的文字" autocomplete="off" />
+              <button class="input-clear" type="button" data-clear-target="search-text" aria-label="清除输入文字" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="replacement-text">替换文字</label>
+            <div class="input-shell">
+              <input id="replacement-text" class="text-input" type="text" placeholder="请输入替换成的文字（留空表示删除）" autocomplete="off" />
+              <button class="input-clear" type="button" data-clear-target="replacement-text" aria-label="清除替换文字" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="text-panel" class="mode-panel" role="tabpanel" aria-labelledby="text-tab" hidden>
+          <div class="field">
+            <label class="field-label" for="text-search">输入文本</label>
+            <div class="input-shell">
+              <input id="text-search" class="text-input" type="text" placeholder="请输入文本，为空时则替换全部" autocomplete="off" />
+              <button class="input-clear" type="button" data-clear-target="text-search" aria-label="清除输入文本" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="text-replacement">替换文本</label>
+            <div class="input-shell">
+              <input id="text-replacement" class="text-input" type="text" placeholder="请输入替换成的文本" autocomplete="off" />
+              <button class="input-clear" type="button" data-clear-target="text-replacement" aria-label="清除替换文本" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         <section class="preview-section" aria-labelledby="preview-title">
@@ -69,7 +163,12 @@
 
       <footer class="footer">
         <label class="sync-note" title="可取消或重新勾选">
-          <input id="sync-layer-name" type="checkbox" checked />
+          <span class="sync-checkbox">
+            <input id="sync-layer-name" type="checkbox" checked />
+            <svg class="sync-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
           <span>同步更改图层名称</span>
         </label>
         <button id="confirm-button" class="confirm-button" type="button" disabled>确定</button>

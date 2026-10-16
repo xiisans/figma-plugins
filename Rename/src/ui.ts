@@ -9,9 +9,10 @@ import {
   type RenameMode,
   type RenameResult,
   type ReplaceConfig,
-  type TokenKind
+  type TokenKind,
+  sortTargets
 } from "./shared/rename";
-import { buildTextResults, validateTextConfig } from "./shared/text";
+import { buildTextResults, validateTextConfig, type TextRenameConfig } from "./shared/text";
 
 const quickConfig: QuickRenameConfig = {
   baseName: "",
@@ -20,12 +21,19 @@ const quickConfig: QuickRenameConfig = {
   tokenOrder: []
 };
 const replaceConfig: ReplaceConfig = { searchText: "", replacementText: "" };
-const textConfig: ReplaceConfig = { searchText: "", replacementText: "" };
+const textConfig: TextRenameConfig = {
+  searchText: "",
+  replacementText: "",
+  number: { enabled: false, digits: null, direction: "asc" }
+};
 
 let mode: RenameMode = "quick";
 let snapshot: SelectionSnapshot = { targets: [], textTargets: [], ignoredCount: 0, selectionCount: 0 };
 let currentResults: RenameResult[] = [];
 let executing = false;
+let awaitingCommittedSnapshot = false;
+let pendingSelectionRequestId: string | null = null;
+const PREVIEW_LIMIT = 12;
 
 const elements = {
   quickTab: byId<HTMLButtonElement>("quick-tab"),
@@ -43,6 +51,8 @@ const elements = {
   replacementText: byId<HTMLInputElement>("replacement-text"),
   textSearch: byId<HTMLInputElement>("text-search"),
   textReplacement: byId<HTMLInputElement>("text-replacement"),
+  textNumberDigits: byId<HTMLInputElement>("text-number-digits"),
+  toggleTextNumber: byId<HTMLButtonElement>("toggle-text-number"),
   previewList: byId<HTMLElement>("preview-list"),
   selectionMeta: byId<HTMLElement>("selection-meta"),
   syncLayerName: byId<HTMLInputElement>("sync-layer-name"),
@@ -59,14 +69,21 @@ window.onmessage = (event: MessageEvent<{ pluginMessage?: PluginToUIMessage }>) 
   if (!message) return;
 
   if (message.type === "SELECTION_CHANGED") {
+    if (message.requestId && message.requestId !== pendingSelectionRequestId) return;
+    pendingSelectionRequestId = null;
+    const showCommittedResult = awaitingCommittedSnapshot;
+    awaitingCommittedSnapshot = false;
     snapshot = message.payload;
-    render();
+    render(showCommittedResult);
   } else if (message.type === "RENAME_SUCCEEDED") {
     executing = false;
+    awaitingCommittedSnapshot = true;
+    clearAllInputValues();
     elements.statusMessage.textContent = `已更新 ${message.payload.changedCount} 个图层`;
     render();
   } else if (message.type === "RENAME_FAILED") {
     executing = false;
+    awaitingCommittedSnapshot = false;
     elements.statusMessage.textContent = message.message;
     render();
   }
@@ -79,7 +96,7 @@ function bindEvents(): void {
 
   elements.baseName.addEventListener("input", () => {
     quickConfig.baseName = elements.baseName.value;
-    render();
+    refreshSelectionBeforeRender();
   });
   elements.numberDigits.addEventListener("input", () => {
     quickConfig.number.digits = parseWidth(elements.numberDigits.value);
@@ -87,7 +104,7 @@ function bindEvents(): void {
       quickConfig.number.enabled = false;
       quickConfig.tokenOrder = quickConfig.tokenOrder.filter((token) => token !== "number");
     }
-    render();
+    refreshSelectionBeforeRender();
   });
   elements.letterWidth.addEventListener("input", () => {
     quickConfig.letter.width = parseWidth(elements.letterWidth.value);
@@ -95,23 +112,30 @@ function bindEvents(): void {
       quickConfig.letter.enabled = false;
       quickConfig.tokenOrder = quickConfig.tokenOrder.filter((token) => token !== "letter");
     }
-    render();
+    refreshSelectionBeforeRender();
   });
   elements.searchText.addEventListener("input", () => {
     replaceConfig.searchText = elements.searchText.value;
-    render();
+    refreshSelectionBeforeRender();
   });
   elements.replacementText.addEventListener("input", () => {
     replaceConfig.replacementText = elements.replacementText.value;
-    render();
+    refreshSelectionBeforeRender();
   });
   elements.textSearch.addEventListener("input", () => {
     textConfig.searchText = elements.textSearch.value;
-    render();
+    refreshSelectionBeforeRender();
   });
   elements.textReplacement.addEventListener("input", () => {
     textConfig.replacementText = elements.textReplacement.value;
-    render();
+    refreshSelectionBeforeRender();
+  });
+  elements.textNumberDigits.addEventListener("input", () => {
+    textConfig.number.digits = parseWidth(elements.textNumberDigits.value);
+    if (!elements.textNumberDigits.value.trim() && !elements.textNumberDigits.validity.badInput) {
+      textConfig.number.enabled = false;
+    }
+    refreshSelectionBeforeRender();
   });
   document.querySelectorAll<HTMLButtonElement>(".input-clear").forEach((button) => {
     button.addEventListener("click", () => {
@@ -126,27 +150,35 @@ function bindEvents(): void {
 
   elements.toggleNumber.addEventListener("click", () => toggleToken("number"));
   elements.toggleLetter.addEventListener("click", () => toggleToken("letter"));
-  elements.syncLayerName.addEventListener("change", () => render());
+  elements.toggleTextNumber.addEventListener("click", toggleTextNumber);
+  elements.syncLayerName.addEventListener("change", refreshSelectionBeforeRender);
 
   document.querySelectorAll<HTMLButtonElement>("[data-number-direction]").forEach((button) => {
     button.addEventListener("click", () => {
       quickConfig.number.direction = button.dataset.numberDirection as Direction;
       setSegmentActive("[data-number-direction]", button);
-      render();
+      refreshSelectionBeforeRender();
     });
   });
   document.querySelectorAll<HTMLButtonElement>("[data-letter-direction]").forEach((button) => {
     button.addEventListener("click", () => {
       quickConfig.letter.direction = button.dataset.letterDirection as Direction;
       setSegmentActive("[data-letter-direction]", button);
-      render();
+      refreshSelectionBeforeRender();
     });
   });
   document.querySelectorAll<HTMLButtonElement>("[data-letter-case]").forEach((button) => {
     button.addEventListener("click", () => {
       quickConfig.letter.letterCase = button.dataset.letterCase as LetterCase;
       setSegmentActive("[data-letter-case]", button);
-      render();
+      refreshSelectionBeforeRender();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>("[data-text-number-direction]").forEach((button) => {
+    button.addEventListener("click", () => {
+      textConfig.number.direction = button.dataset.textNumberDirection as Direction;
+      setSegmentActive("[data-text-number-direction]", button);
+      refreshSelectionBeforeRender();
     });
   });
 
@@ -170,7 +202,7 @@ function setMode(nextMode: RenameMode): void {
     item.tab.setAttribute("aria-selected", String(active));
     item.panel.hidden = !active;
   }
-  render();
+  refreshSelectionBeforeRender();
 }
 
 function toggleToken(kind: TokenKind): void {
@@ -190,10 +222,21 @@ function toggleToken(kind: TokenKind): void {
     config.enabled = false;
     quickConfig.tokenOrder = quickConfig.tokenOrder.filter((token) => token !== kind);
   }
-  render();
+  refreshSelectionBeforeRender();
 }
 
-function render(): void {
+function toggleTextNumber(): void {
+  if (textConfig.number.enabled) {
+    textConfig.number.enabled = false;
+  } else if (isValidWidth(textConfig.number.digits, 32)) {
+    textConfig.number.enabled = true;
+  } else {
+    elements.textNumberDigits.focus();
+  }
+  refreshSelectionBeforeRender();
+}
+
+function render(showCommittedResult = false): void {
   document.querySelectorAll<HTMLButtonElement>(".input-clear").forEach((button) => {
     const targetId = button.dataset.clearTarget;
     button.hidden = !targetId || byId<HTMLInputElement>(targetId).value.length === 0;
@@ -207,6 +250,10 @@ function render(): void {
   elements.toggleLetter.title = quickConfig.letter.enabled ? "移除字母" : "添加字母";
   elements.toggleLetter.classList.toggle("is-added", quickConfig.letter.enabled);
   elements.toggleLetter.disabled = !quickConfig.letter.enabled && !isValidWidth(quickConfig.letter.width, 10);
+  elements.toggleTextNumber.setAttribute("aria-label", textConfig.number.enabled ? "移除文本数字" : "添加文本数字");
+  elements.toggleTextNumber.title = textConfig.number.enabled ? "移除文本数字" : "添加文本数字";
+  elements.toggleTextNumber.classList.toggle("is-added", textConfig.number.enabled);
+  elements.toggleTextNumber.disabled = !textConfig.number.enabled && !isValidWidth(textConfig.number.digits, 32);
 
   const targetCount = mode === "text" ? snapshot.textTargets.length : snapshot.targets.length;
   const ignoredCount = mode === "text" ? 0 : snapshot.ignoredCount;
@@ -220,6 +267,22 @@ function render(): void {
 
   if (targetCount === 0) {
     appendPlaceholder(mode === "text" ? "选择包含文本的图层后显示预览" : "选择画板后显示预览");
+  } else if (showCommittedResult) {
+    if (mode === "text") {
+      const textById = new Map(snapshot.textTargets.map((target) => [target.id, target.characters]));
+      currentResults = sortTargets(snapshot.textTargets).map((target) => {
+        const value = textById.get(target.id) ?? "";
+        return { id: target.id, originalName: value, nextName: value, changed: false };
+      });
+    } else {
+      currentResults = snapshot.targets.map((target) => ({
+        id: target.id,
+        originalName: target.originalName,
+        nextName: target.originalName,
+        changed: false
+      }));
+    }
+    renderResultNames(currentResults);
   } else if (!validation.valid) {
     appendPlaceholder("完善命名规则后显示预览");
   } else {
@@ -235,18 +298,18 @@ function render(): void {
   }
 
   const hasChanges = currentResults.some((result) => result.changed);
-  elements.confirmButton.disabled = executing || !validation.valid || targetCount === 0 || !hasChanges;
+  elements.confirmButton.disabled = executing || showCommittedResult || !validation.valid || targetCount === 0 || !hasChanges;
   elements.confirmButton.textContent = executing ? "处理中…" : "确定";
 }
 
 function renderResultNames(results: RenameResult[]): void {
-  results.slice(0, 6).forEach((result, index) => {
+  results.slice(0, PREVIEW_LIMIT).forEach((result, index) => {
     const item = document.createElement("span");
     item.className = "preview-item";
     const previewText = mode === "text" && !result.nextName ? "（空文本）" : result.nextName;
     item.textContent = previewText;
     item.title = result.nextName;
-    if (index === 5 && results.length > 6) {
+    if (index === PREVIEW_LIMIT - 1 && results.length > PREVIEW_LIMIT) {
       item.classList.add("has-more");
       const name = document.createElement("span");
       name.className = "preview-name";
@@ -254,7 +317,7 @@ function renderResultNames(results: RenameResult[]): void {
       const more = document.createElement("span");
       more.className = "preview-more";
       more.textContent = "…";
-      more.title = `另有 ${results.length - 6} 个结果`;
+      more.title = `另有 ${results.length - PREVIEW_LIMIT} 个结果`;
       item.replaceChildren(name, more);
     }
     elements.previewList.append(item);
@@ -280,10 +343,42 @@ function executeRename(): void {
       mode,
       quick: structuredCloneSafe(quickConfig),
       replace: { ...replaceConfig },
-      text: { ...textConfig },
+      text: { ...textConfig, number: { ...textConfig.number } },
       syncLayerName: elements.syncLayerName.checked
     }
   });
+}
+
+function clearAllInputValues(): void {
+  elements.baseName.value = "";
+  elements.numberDigits.value = "";
+  elements.letterWidth.value = "";
+  elements.searchText.value = "";
+  elements.replacementText.value = "";
+  elements.textSearch.value = "";
+  elements.textReplacement.value = "";
+  elements.textNumberDigits.value = "";
+
+  quickConfig.baseName = "";
+  quickConfig.number.enabled = false;
+  quickConfig.number.digits = null;
+  quickConfig.letter.enabled = false;
+  quickConfig.letter.width = null;
+  quickConfig.tokenOrder = [];
+  replaceConfig.searchText = "";
+  replaceConfig.replacementText = "";
+  textConfig.searchText = "";
+  textConfig.replacementText = "";
+  textConfig.number.enabled = false;
+  textConfig.number.digits = null;
+}
+
+function refreshSelectionBeforeRender(): void {
+  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  awaitingCommittedSnapshot = false;
+  pendingSelectionRequestId = requestId;
+  elements.confirmButton.disabled = true;
+  postToPlugin({ type: "REQUEST_SELECTION", requestId });
 }
 
 function setSegmentActive(selector: string, activeButton: HTMLButtonElement): void {

@@ -1,5 +1,5 @@
 import type { QuickRenameConfig, RenameMode, RenameTarget, ReplaceConfig } from "./rename";
-import type { TextTarget } from "./text";
+import type { TextRenameConfig, TextTarget } from "./text";
 
 export interface SelectionSnapshot {
   targets: RenameTarget[];
@@ -12,16 +12,17 @@ export interface ExecuteRenamePayload {
   mode: RenameMode;
   quick: QuickRenameConfig;
   replace: ReplaceConfig;
-  text: ReplaceConfig;
+  text: TextRenameConfig;
   syncLayerName: boolean;
 }
 
 export type UIToPluginMessage =
   | { type: "UI_READY" }
+  | { type: "REQUEST_SELECTION"; requestId: string }
   | { type: "EXECUTE_RENAME"; requestId: string; payload: ExecuteRenamePayload };
 
 export type PluginToUIMessage =
-  | { type: "SELECTION_CHANGED"; payload: SelectionSnapshot }
+  | { type: "SELECTION_CHANGED"; requestId?: string; payload: SelectionSnapshot }
   | {
       type: "RENAME_SUCCEEDED";
       requestId: string;

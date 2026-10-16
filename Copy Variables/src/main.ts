@@ -1,4 +1,4 @@
-import { filterClipboard, isAlias } from './shared/clipboard';
+import { filterClipboard, isAlias, orderClipboardCollections } from './shared/clipboard';
 import { collectionToTree, variableKey } from './shared/tree';
 import type {
   ClipboardData,
@@ -54,17 +54,20 @@ async function scanLocalVariables(): Promise<ClipboardData> {
   ]);
   collectionNames = new Map(collections.map((collection) => [collection.id, collection.name]));
   const variablesById = new Map(variables.map((variable) => [variable.id, variable]));
-  const variablesByCollection = new Map<string, Variable[]>();
-
-  for (const variable of variables) {
-    const list = variablesByCollection.get(variable.variableCollectionId) ?? [];
-    list.push(variable);
-    variablesByCollection.set(variable.variableCollectionId, list);
-  }
 
   const storedCollections: StoredCollection[] = collections.map((collection) => {
     const modesById = new Map(collection.modes.map((mode) => [mode.modeId, mode.name]));
-    const storedVariables: StoredVariable[] = (variablesByCollection.get(collection.id) ?? []).map((variable) => ({
+    const orderedVariables = collection.variableIds.flatMap((id) => {
+      const variable = variablesById.get(id);
+      return variable && variable.variableCollectionId === collection.id ? [variable] : [];
+    });
+    const orderedIds = new Set(orderedVariables.map((variable) => variable.id));
+    for (const variable of variables) {
+      if (variable.variableCollectionId === collection.id && !orderedIds.has(variable.id)) {
+        orderedVariables.push(variable);
+      }
+    }
+    const storedVariables: StoredVariable[] = orderedVariables.map((variable) => ({
       name: variable.name,
       type: variable.resolvedType as VariableDataType,
       description: variable.description,
@@ -91,6 +94,8 @@ async function scanLocalVariables(): Promise<ClipboardData> {
     sourceFileName: figma.root.name,
     sourceFileKey: figma.fileKey ?? null,
     copiedAt: new Date().toISOString(),
+    // Figma returns local collections and variables in the order shown in its
+    // variables panel. Keep that order for both the copy list and clipboard.
     collections: storedCollections
   };
 }
@@ -99,6 +104,12 @@ async function loadClipboard(): Promise<ClipboardData | null> {
   const value = await figma.clientStorage.getAsync(CLIPBOARD_KEY);
   if (!value || value.version !== 1 || !Array.isArray(value.collections)) return null;
   return value as ClipboardData;
+}
+
+async function replaceClipboard(clipboard: ClipboardData): Promise<ClipboardData> {
+  // setAsync replaces the value at this key; it never appends to the previous snapshot.
+  await figma.clientStorage.setAsync(CLIPBOARD_KEY, clipboard);
+  return await loadClipboard() ?? clipboard;
 }
 
 async function loadData() {
@@ -111,17 +122,17 @@ async function loadData() {
   post({ type: 'data-loaded', current, clipboard });
 }
 
-async function copySelection(keys: string[]): Promise<OperationResult> {
+async function copySelection(keys: string[], collectionOrder: string[]): Promise<OperationResult> {
   const all = await scanLocalVariables();
-  const clipboard = filterClipboard(all, keys);
+  const clipboard = orderClipboardCollections(filterClipboard(all, keys), collectionOrder);
   const variableCount = clipboard.collections.reduce((sum, collection) => sum + collection.variables.length, 0);
   if (!variableCount) return { ok: false, title: '复制失败', message: '请至少选择一个变量' };
-  await figma.clientStorage.setAsync(CLIPBOARD_KEY, clipboard);
+  const savedClipboard = await replaceClipboard(clipboard);
   return {
     ok: true,
     title: '复制成功',
     message: `已复制 ${clipboard.collections.length} 个集合、${variableCount} 个变量`,
-    clipboard
+    clipboard: savedClipboard
   };
 }
 
@@ -198,7 +209,9 @@ async function pasteSelection(keys: string[]): Promise<OperationResult> {
   let failed = 0;
   const failures: string[] = [];
 
-  for (const sourceCollection of clipboard.collections) {
+  // Figma prepends each newly created collection in the native variables panel.
+  // Create bottom-to-top so the final panel order matches the source file.
+  for (const sourceCollection of [...clipboard.collections].reverse()) {
     let context: TargetContext;
     try {
       context = await prepareCollection(sourceCollection, existingCollections);
@@ -276,7 +289,7 @@ figma.ui.onmessage = async (message: PluginMessage) => {
       return;
     }
     const result = message.type === 'copy-selection'
-      ? await copySelection(message.keys)
+      ? await copySelection(message.keys, message.collectionOrder)
       : await pasteSelection(message.keys);
     notifyResult(result);
     post({ type: 'operation-result', result });

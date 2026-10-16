@@ -21,15 +21,20 @@ figma.ui.onmessage = async (message: UIToPluginMessage) => {
     return;
   }
 
+  if (message.type === "REQUEST_SELECTION") {
+    sendSelection(message.requestId);
+    return;
+  }
+
   if (message.type === "EXECUTE_RENAME") {
     await executeRename(message);
   }
 };
 
-figma.on("selectionchange", sendSelection);
+figma.on("selectionchange", () => sendSelection());
 
-function sendSelection(): void {
-  postToUI({ type: "SELECTION_CHANGED", payload: getSelectionSnapshot() });
+function sendSelection(requestId?: string): void {
+  postToUI({ type: "SELECTION_CHANGED", requestId, payload: getSelectionSnapshot() });
 }
 
 function getSelectionSnapshot(): SelectionSnapshot {

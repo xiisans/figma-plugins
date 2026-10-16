@@ -30,7 +30,7 @@ const payload: ExecuteRenamePayload = {
   mode: "text",
   quick: { baseName: "新画板", number: { enabled: false, digits: null, direction: "asc" }, letter: { enabled: false, width: null, letterCase: "upper", direction: "asc" }, tokenOrder: [] },
   replace: { searchText: "旧", replacementText: "新" },
-  text: { searchText: "旧", replacementText: "新" },
+  text: { searchText: "旧", replacementText: "新", number: { enabled: false, digits: null, direction: "asc" } },
   syncLayerName: true
 };
 
@@ -86,6 +86,17 @@ async function execute(overrides: Partial<ExecuteRenamePayload> = {}) {
 }
 
 describe("text mode controller", () => {
+  it("reloads the current selection for an explicit preview refresh", async () => {
+    const text = textNode("t", "最新内容");
+    host.currentPage.selection = [text];
+    await host.ui.onmessage({ type: "REQUEST_SELECTION", requestId: "preview-refresh" });
+    expect(host.ui.postMessage).toHaveBeenLastCalledWith(expect.objectContaining({
+      type: "SELECTION_CHANGED",
+      requestId: "preview-refresh",
+      payload: expect.objectContaining({ textTargets: [expect.objectContaining({ characters: "最新内容" })] })
+    }));
+  });
+
   it("previews and updates all descendant texts across nested groups, components and instances", async () => {
     const first = textNode("a", "旧标题");
     const nested = textNode("b", "旧内容");
@@ -114,7 +125,7 @@ describe("text mode controller", () => {
     expect(host.ui.postMessage).toHaveBeenLastCalledWith(expect.objectContaining({ payload: expect.objectContaining({
       textTargets: [expect.objectContaining({ id: "t" })]
     }) }));
-    await execute({ text: { searchText: "旧", replacementText: "旧新" } });
+    await execute({ text: { searchText: "旧", replacementText: "旧新", number: { enabled: false, digits: null, direction: "asc" } } });
     expect(text.characters).toBe("旧新");
     expect(text.insertCharacters).toHaveBeenCalledOnce();
   });
@@ -196,7 +207,7 @@ describe("text mode controller", () => {
   it("writes full replacements to empty layers and applies the long name rule", async () => {
     const node = textNode("t", "");
     host.currentPage.selection = [node];
-    await execute({ text: { searchText: "", replacementText: "1234567890123" } });
+    await execute({ text: { searchText: "", replacementText: "1234567890123", number: { enabled: false, digits: null, direction: "asc" } } });
     expect(host.loadFontAsync).toHaveBeenCalledWith(inter);
     expect(node.characters).toBe("1234567890123");
     expect(node.name).toBe("text");
@@ -205,11 +216,38 @@ describe("text mode controller", () => {
   it("handles shorter, longer, repeated and complete deletions correctly", async () => {
     const node = textNode("t", "旧旧旧");
     host.currentPage.selection = [node];
-    await execute({ text: { searchText: "旧", replacementText: "替换" } });
+    await execute({ text: { searchText: "旧", replacementText: "替换", number: { enabled: false, digits: null, direction: "asc" } } });
     expect(node.characters).toBe("替换替换替换");
-    await execute({ text: { searchText: "替换", replacementText: "" }, syncLayerName: false });
+    await execute({ text: { searchText: "替换", replacementText: "", number: { enabled: false, digits: null, direction: "asc" } }, syncLayerName: false });
     expect(node.characters).toBe("");
     expect(node.name).toBe("替换替换替换");
+  });
+
+  it("writes replacement and number suffix together in the correct order", async () => {
+    const first = textNode("a", "旧标题");
+    const second = textNode("b", "旧按钮");
+    second.x = 100;
+    second.absoluteBoundingBox.x = 100;
+    host.currentPage.selection = [second, first];
+    await execute({
+      text: { searchText: "旧", replacementText: "新", number: { enabled: true, digits: 2, direction: "asc" } }
+    });
+    expect([first.characters, second.characters]).toEqual(["新标题01", "新按钮02"]);
+    expect([first.name, second.name]).toEqual(["新标题01", "新按钮02"]);
+  });
+
+  it("applies a number-only preview exactly once", async () => {
+    const node = textNode("t", "标题");
+    host.currentPage.selection = [node];
+    await execute({
+      text: { searchText: "", replacementText: "", number: { enabled: true, digits: 2, direction: "asc" } }
+    });
+    expect(node.characters).toBe("标题01");
+    expect(node.insertCharacters).toHaveBeenCalledOnce();
+    expect(host.ui.postMessage).toHaveBeenLastCalledWith(expect.objectContaining({
+      type: "SELECTION_CHANGED",
+      payload: expect.objectContaining({ textTargets: [expect.objectContaining({ characters: "标题01" })] })
+    }));
   });
 
   it("rejects stale content that changes while fonts are loading", async () => {

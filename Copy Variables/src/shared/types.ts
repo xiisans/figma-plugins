@@ -99,7 +99,7 @@ export interface OperationResult {
 
 export type PluginMessage =
   | { type: 'load-data' }
-  | { type: 'copy-selection'; keys: string[] }
+  | { type: 'copy-selection'; keys: string[]; collectionOrder: string[] }
   | { type: 'paste-selection'; keys: string[] }
   | { type: 'close' };
 

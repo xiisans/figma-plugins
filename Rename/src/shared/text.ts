@@ -1,4 +1,15 @@
-import { sortTargets, type RenameTarget, type ReplaceConfig, type ValidationResult } from "./rename";
+import {
+  numberSequenceValue,
+  sortTargets,
+  type NumberTokenConfig,
+  type RenameTarget,
+  type ReplaceConfig,
+  type ValidationResult
+} from "./rename";
+
+export interface TextRenameConfig extends ReplaceConfig {
+  number: NumberTokenConfig;
+}
 
 export interface TextTarget extends RenameTarget {
   characters: string;
@@ -21,24 +32,35 @@ export interface TextResult {
   changed: boolean;
 }
 
-export function validateTextConfig(config: ReplaceConfig): ValidationResult {
-  return config.searchText || config.replacementText
+export function validateTextConfig(config: TextRenameConfig): ValidationResult {
+  if (config.number.enabled && !isValidNumberWidth(config.number.digits)) {
+    return { valid: false, message: "数字位数应为 1-32 的整数" };
+  }
+  return config.searchText || config.replacementText || config.number.enabled
     ? { valid: true }
-    : { valid: false, message: "请输入要查找或替换的文本" };
+    : { valid: false, message: "请输入文本规则或添加数字" };
 }
 
 export function textLayerName(content: string): string {
   return Array.from(content).length <= 12 ? content : "text";
 }
 
-export function buildTextResults(targets: TextTarget[], config: ReplaceConfig, syncLayerName: boolean): TextResult[] {
+export function buildTextResults(targets: TextTarget[], config: TextRenameConfig, syncLayerName: boolean): TextResult[] {
   const validation = validateTextConfig(config);
   if (!validation.valid) throw new Error(validation.message);
   const byId = new Map(targets.map((target) => [target.id, target]));
+  const sortedTargets = sortTargets(targets);
 
-  return sortTargets(targets).map(({ id }) => {
+  return sortedTargets.map(({ id }, index) => {
     const target = byId.get(id)!;
-    const edits = findTextEdits(target.characters, config);
+    const edits = config.searchText || config.replacementText ? findTextEdits(target.characters, config) : [];
+    if (config.number.enabled) {
+      edits.push({
+        start: target.characters.length,
+        end: target.characters.length,
+        replacement: numberSequenceValue(index, sortedTargets.length, config.number.digits!, config.number.direction)
+      });
+    }
     let nextText = target.characters;
     for (const edit of [...edits].reverse()) {
       nextText = nextText.slice(0, edit.start) + edit.replacement + nextText.slice(edit.end);
@@ -48,6 +70,10 @@ export function buildTextResults(targets: TextTarget[], config: ReplaceConfig, s
     const nameChanged = nextName !== target.originalName;
     return { id, originalText: target.characters, nextText, nextName, edits, textChanged, nameChanged, changed: textChanged || nameChanged };
   });
+}
+
+function isValidNumberWidth(value: number | null): value is number {
+  return value !== null && Number.isInteger(value) && value >= 1 && value <= 32;
 }
 
 function findTextEdits(value: string, config: ReplaceConfig): TextEdit[] {

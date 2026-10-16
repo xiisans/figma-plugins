@@ -37,3 +37,15 @@ export function filterClipboard(clipboard: ClipboardData, requestedKeys: Iterabl
     })
   };
 }
+
+export function orderClipboardCollections(clipboard: ClipboardData, collectionOrder: string[]): ClipboardData {
+  const positions = new Map(collectionOrder.map((name, index) => [name, index]));
+  return {
+    ...clipboard,
+    collections: [...clipboard.collections].sort((a, b) => {
+      const positionA = positions.get(a.name) ?? Number.MAX_SAFE_INTEGER;
+      const positionB = positions.get(b.name) ?? Number.MAX_SAFE_INTEGER;
+      return positionA - positionB;
+    })
+  };
+}

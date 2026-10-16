@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>西西重命名</title>
+    <title>西无 — 重命名</title>
     <style>
 /*__STYLES__*/
     </style>
   </head>
   <body>
-    <!-- Icons: https://feathericons.com/ (arrow-up, arrow-down, check, plus, x). -->
+    <!-- Icons: https://feathericons.com/ (arrow-up, arrow-down, check, plus, minus, x). -->
     <main class="app-shell">
       <header class="tabs" role="tablist" aria-label="重命名模式">
         <button id="quick-tab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="quick-panel">快速命名</button>
@@ -61,7 +61,9 @@
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                <span class="remove-label">移除</span>
+                <svg class="remove-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
               </button>
             </div>
             <div class="sequence-row letter-row">
@@ -96,7 +98,9 @@
                   <line x1="12" y1="5" x2="12" y2="19"></line>
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                <span class="remove-label">移除</span>
+                <svg class="remove-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
               </button>
             </div>
           </div>
@@ -149,6 +153,39 @@
                 </svg>
               </button>
             </div>
+          </div>
+          <div class="sequence-row text-number-row">
+            <div class="input-shell">
+              <input id="text-number-digits" class="sequence-input" type="number" min="1" max="32" inputmode="numeric" placeholder="数字位数" />
+              <button class="input-clear" type="button" data-clear-target="text-number-digits" aria-label="清除文本数字位数" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="segmented" aria-label="文本数字排序">
+              <button class="segment is-active" type="button" data-text-number-direction="asc" aria-label="升序" title="升序">
+                <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="12" y1="19" x2="12" y2="5"></line>
+                  <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+              </button>
+              <button class="segment" type="button" data-text-number-direction="desc" aria-label="降序" title="降序">
+                <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+              </button>
+            </div>
+            <button id="toggle-text-number" class="add-button" type="button" aria-label="添加文本数字" title="添加文本数字">
+              <svg class="add-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <svg class="remove-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
           </div>
         </div>
 

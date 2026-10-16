@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterClipboard } from './clipboard';
+import { filterClipboard, orderClipboardCollections } from './clipboard';
 import { variableKey } from './tree';
 import type { ClipboardData, StoredCollection, StoredVariable } from './types';
 
@@ -60,5 +60,21 @@ describe('filterClipboard', () => {
     };
     const result = filterClipboard(data, [variableKey('A', 'External')]);
     expect(result.collections[0].variables[0].modes[0].value).toEqual({ kind: 'unsupported', reason: 'external alias' });
+  });
+
+  it('uses the collection order displayed by the copy panel', () => {
+    const data: ClipboardData = {
+      version: 1,
+      sourceFileName: 'Source',
+      sourceFileKey: null,
+      copiedAt: '2026-01-01T00:00:00.000Z',
+      collections: [
+        makeCollection('Token', [makeVariable('Value', 1)]),
+        makeCollection('Color', [makeVariable('Value', 2)]),
+        makeCollection('Font', [makeVariable('Value', 3)])
+      ]
+    };
+    const result = orderClipboardCollections(data, ['Color', 'Font', 'Token']);
+    expect(result.collections.map((item) => item.name)).toEqual(['Color', 'Font', 'Token']);
   });
 });

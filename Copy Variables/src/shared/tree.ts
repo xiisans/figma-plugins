@@ -57,24 +57,22 @@ function findGroup(groups: TreeGroup[], key: string): TreeGroup | undefined {
   return undefined;
 }
 
-function compareNames(a: string, b: string): number {
-  const isNumericA = /^\d+$/.test(a);
-  const isNumericB = /^\d+$/.test(b);
+function sortNumericNamesInPlace<T extends { name: string }>(items: T[]): void {
+  const numericSlots = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => /^\d+$/.test(item.name));
+  const sortedNumericItems = numericSlots
+    .map(({ item }) => item)
+    .sort((a, b) => Number(a.name) - Number(b.name) || a.name.localeCompare(b.name));
 
-  if (isNumericA && isNumericB) {
-    const normalizedA = a.replace(/^0+(?=\d)/, '');
-    const normalizedB = b.replace(/^0+(?=\d)/, '');
-    if (normalizedA.length !== normalizedB.length) return normalizedA.length - normalizedB.length;
-    const numericOrder = normalizedA.localeCompare(normalizedB);
-    if (numericOrder !== 0) return numericOrder;
-  }
-
-  return a.localeCompare(b, 'zh-CN');
+  numericSlots.forEach(({ index }, position) => {
+    items[index] = sortedNumericItems[position];
+  });
 }
 
 function sortTree(node: TreeCollection | TreeGroup) {
-  node.children.sort((a, b) => compareNames(a.name, b.name));
-  node.variables.sort((a, b) => compareNames(a.name, b.name));
+  sortNumericNamesInPlace(node.children);
+  sortNumericNamesInPlace(node.variables);
   node.children.forEach(sortTree);
 }
 

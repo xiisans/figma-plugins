@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ChevronRight, Circle, Folder, Layers3, RefreshCw } from 'lucide-react';
 import type { ClipboardData, CurrentVariablesPayload, PluginResponse, TreeCollection, TreeGroup, TreeNode, TreeVariable } from '../shared/types';
@@ -84,15 +84,20 @@ function TreeRow({
 
 function App() {
   const [mode, setMode] = useState<Mode>('copy');
+  const modeRef = useRef<Mode>('copy');
+  const hasLoadedRef = useRef(false);
   const [current, setCurrent] = useState<CurrentVariablesPayload | null>(null);
   const [clipboard, setClipboard] = useState<ClipboardData | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [copySelected, setCopySelected] = useState<Set<string>>(new Set());
+  const [pasteSelected, setPasteSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState('正在加载变量…');
 
   const nodes = useMemo(() => mode === 'copy' ? current?.collections ?? [] : clipboardTrees(clipboard), [clipboard, current, mode]);
+  const selected = mode === 'copy' ? copySelected : pasteSelected;
+  const setActiveSelected = mode === 'copy' ? setCopySelected : setPasteSelected;
   const variableCount = countVariables(nodes);
   const allVariableKeys = useMemo(() => nodes.flatMap(flattenVariableKeys), [nodes]);
   const selectedVariableCount = allVariableKeys.filter((key) => selected.has(key)).length;
@@ -102,6 +107,12 @@ function App() {
       ? 'checked'
       : 'mixed';
 
+  const changeMode = (nextMode: Mode) => {
+    modeRef.current = nextMode;
+    setMode(nextMode);
+    setExpanded(new Set());
+  };
+
   useEffect(() => {
     const onMessage = (event: MessageEvent<{ pluginMessage?: PluginResponse }>) => {
       const response = event.data.pluginMessage;
@@ -110,19 +121,26 @@ function App() {
         setRefreshing(false);
         setCurrent(response.current);
         setClipboard(response.clipboard);
-        const isTargetFile = Boolean(response.clipboard && (
-          response.clipboard.sourceFileKey && response.current.fileKey
-            ? response.clipboard.sourceFileKey !== response.current.fileKey
-            : response.clipboard.sourceFileName !== response.current.fileName
-        ));
-        setMode(isTargetFile ? 'paste' : 'copy');
-        setMessage(isTargetFile || response.current.collections.length ? '' : '当前文件还没有本地变量');
+        let activeMode = modeRef.current;
+        if (!hasLoadedRef.current) {
+          const isTargetFile = Boolean(response.clipboard && (
+            response.clipboard.sourceFileKey && response.current.fileKey
+              ? response.clipboard.sourceFileKey !== response.current.fileKey
+              : response.clipboard.sourceFileName !== response.current.fileName
+          ));
+          activeMode = isTargetFile ? 'paste' : 'copy';
+          changeMode(activeMode);
+          hasLoadedRef.current = true;
+        }
+        setMessage(activeMode === 'copy'
+          ? response.current.collections.length ? '' : '当前文件还没有本地变量'
+          : response.clipboard?.collections.length ? '' : '没有可粘贴的复制记录');
       }
       if (response.type === 'operation-result') {
         setBusy(false);
         if (response.result.clipboard) setClipboard(response.result.clipboard);
         setMessage(response.result.message);
-        if (response.result.ok && mode === 'copy') setMode('paste');
+        if (response.result.ok && modeRef.current === 'copy') changeMode('paste');
       }
       if (response.type === 'error') {
         setBusy(false);
@@ -136,12 +154,19 @@ function App() {
   }, []);
 
   useEffect(() => {
-    setSelected(new Set(mode === 'paste' ? nodes.flatMap(flattenVariableKeys) : []));
-    setExpanded(new Set());
-  }, [mode, clipboard, current]);
+    const copyNodes = current?.collections ?? [];
+    setCopySelected(new Set(copyNodes.flatMap(flattenVariableKeys)));
+    if (modeRef.current === 'copy') setExpanded(new Set());
+  }, [current]);
+
+  useEffect(() => {
+    const pasteNodes = clipboardTrees(clipboard);
+    setPasteSelected(new Set(pasteNodes.flatMap(flattenVariableKeys)));
+    if (modeRef.current === 'paste') setExpanded(new Set());
+  }, [clipboard]);
 
   const toggleSelection = (node: TreeNode) => {
-    setSelected((previous) => {
+    setActiveSelected((previous) => {
       const next = new Set(previous);
       const keys = descendants(node);
       const shouldSelect = keys.some((key) => !next.has(key));
@@ -154,7 +179,9 @@ function App() {
     if (!selected.size || busy) return;
     setBusy(true);
     setMessage(mode === 'copy' ? '正在复制…' : '正在粘贴…');
-    send({ type: mode === 'copy' ? 'copy-selection' : 'paste-selection', keys: Array.from(selected) });
+    send(mode === 'copy'
+      ? { type: 'copy-selection', keys: Array.from(selected), collectionOrder: nodes.map((node) => node.name) }
+      : { type: 'paste-selection', keys: Array.from(selected) });
   };
 
   const refresh = () => {
@@ -165,7 +192,7 @@ function App() {
   };
 
   const toggleSelectAll = () => {
-    setSelected(selectAllState === 'checked' ? new Set() : new Set(allVariableKeys));
+    setActiveSelected(selectAllState === 'checked' ? new Set() : new Set(allVariableKeys));
   };
 
   const hasClipboard = Boolean(clipboard && clipboard.collections.length);
@@ -180,8 +207,8 @@ function App() {
             <RefreshCw size={14} className={refreshing ? 'spinning' : ''} />
           </button>
           <div className={`mode-switch ${mode}`} role="tablist" aria-label="操作模式">
-            <button className={mode === 'copy' ? 'active' : ''} onClick={() => { setMessage(''); setMode('copy'); }}>复制</button>
-            <button className={mode === 'paste' ? 'active' : ''} disabled={!hasClipboard} onClick={() => { setMessage(''); setMode('paste'); }}>粘贴</button>
+            <button className={mode === 'copy' ? 'active' : ''} onClick={() => { setMessage(''); changeMode('copy'); }}>复制</button>
+            <button className={mode === 'paste' ? 'active' : ''} disabled={!hasClipboard} onClick={() => { setMessage(''); changeMode('paste'); }}>粘贴</button>
           </div>
         </div>
       </header>

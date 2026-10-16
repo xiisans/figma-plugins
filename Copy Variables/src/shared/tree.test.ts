@@ -21,6 +21,15 @@ const collection = (variables: StoredVariable[]): StoredCollection => ({
 });
 
 describe('collectionToTree', () => {
+  it('keeps collection order supplied by the Figma variables panel', () => {
+    const collections = [
+      { ...collection([variable('Value')]), name: 'Color' },
+      { ...collection([variable('Value')]), name: 'Font' },
+      { ...collection([variable('Value')]), name: 'Token' }
+    ];
+    expect(collections.map(collectionToTree).map((item) => item.name)).toEqual(['Color', 'Font', 'Token']);
+  });
+
   it('creates collection, nested group and variable levels from slash names', () => {
     const tree = collectionToTree(collection([variable('颜色/品牌/主色'), variable('间距')]));
     expect(tree.children[0].name).toBe('颜色');
@@ -58,4 +67,29 @@ describe('collectionToTree', () => {
     ]));
     expect(tree.children.map((item) => item.name)).toEqual(['2', '10', '100']);
   });
+
+  it('preserves the source order of non-numeric groups and variables', () => {
+    const tree = collectionToTree(collection([
+      variable('Zebra/Second'),
+      variable('Alpha/Last'),
+      variable('Zebra/First')
+    ]));
+    expect(tree.children.map((item) => item.name)).toEqual(['Zebra', 'Alpha']);
+    expect(tree.children[0].variables.map((item) => item.name)).toEqual(['Second', 'First']);
+  });
+
+  it('preserves source order across nested groups', () => {
+    const tree = collectionToTree(collection([
+      variable('Semantic/State Z/Second'),
+      variable('Primitive/Blue/500'),
+      variable('Semantic/State A/First'),
+      variable('Primitive/Gray/100'),
+      variable('Semantic/State Z/First')
+    ]));
+    expect(tree.children.map((item) => item.name)).toEqual(['Semantic', 'Primitive']);
+    expect(tree.children[0].children.map((item) => item.name)).toEqual(['State Z', 'State A']);
+    expect(tree.children[0].children[0].variables.map((item) => item.name)).toEqual(['Second', 'First']);
+    expect(tree.children[1].children.map((item) => item.name)).toEqual(['Blue', 'Gray']);
+  });
+
 });

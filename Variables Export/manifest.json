@@ -1,0 +1,12 @@
+{
+  "name": "西无 — 变量导出",
+  "id": "xiisans-variables-export",
+  "api": "1.0.0",
+  "main": "dist/plugin.js",
+  "ui": "dist/index.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

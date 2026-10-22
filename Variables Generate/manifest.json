@@ -1,0 +1,12 @@
+{
+  "name": "西无 — 变量生成",
+  "id": "xiisans-variable-generator",
+  "api": "1.0.0",
+  "main": "dist/plugin.js",
+  "ui": "dist/index.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

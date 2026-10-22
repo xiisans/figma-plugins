@@ -1,3 +1,16 @@
 @use './variables';
 @use './theme';
 @use './scrollbar';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 600px;
+  height: 400px;
+  margin: 0;
+  overflow: hidden;
+}

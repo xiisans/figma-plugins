@@ -49,6 +49,9 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "SCSS" }));
     expect(document.querySelector(".code-preview")).toHaveTextContent("$brand-10: $primary-brand-default;");
     expect(screen.queryByText(/\$figma-variables/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "CSS/SCSS" }));
+    expect(document.querySelector(".code-preview")).toHaveTextContent("--brand-10: $primary-brand-default;");
+    expect(document.querySelector(".code-preview")).toHaveTextContent(":root {");
     fireEvent.click(screen.getByRole("button", { name: /Hex/ }));
     fireEvent.click(screen.getByRole("option", { name: "RGB(A)" }));
     expect(preview).toHaveTextContent("rgb(69, 103, 255)");

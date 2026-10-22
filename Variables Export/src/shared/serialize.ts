@@ -83,6 +83,13 @@ export function serializeCss(snapshot: ExportSnapshotDto, colorFormat: ColorForm
   }).join("\n\n");
 }
 
+export function serializeCssScss(snapshot: ExportSnapshotDto, colorFormat: ColorFormat): string {
+  return snapshot.modes.map((mode) => {
+    const lines = mode.entries.map((entry) => `  --${entry.variableSlug}: ${literalValue(entry, colorFormat, "scss")};`);
+    return `/* ${displayName(mode.collectionName)} - ${displayName(mode.modeName)} */\n${cssSelector(mode)} {\n${lines.join("\n")}\n}`;
+  }).join("\n\n");
+}
+
 export function serializeScss(snapshot: ExportSnapshotDto, colorFormat: ColorFormat): string {
   return snapshot.modes.map((mode) => {
     const lines = mode.entries.map((entry) => `$${entry.variableSlug}: ${literalValue(entry, colorFormat, "scss")};`);
@@ -129,6 +136,7 @@ export function serializeTailwind(snapshot: ExportSnapshotDto, colorFormat: Colo
 
 export function serializeSnapshot(snapshot: ExportSnapshotDto, exportFormat: ExportFormat, colorFormat: ColorFormat): string {
   if (exportFormat === "scss") return serializeScss(snapshot, colorFormat);
+  if (exportFormat === "css-scss") return serializeCssScss(snapshot, colorFormat);
   if (exportFormat === "tailwind") return serializeTailwind(snapshot, colorFormat);
   return serializeCss(snapshot, colorFormat);
 }

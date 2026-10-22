@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatColor, serializeCss, serializeScss, serializeTailwind } from "../src/shared/serialize";
+import { formatColor, serializeCss, serializeCssScss, serializeScss, serializeTailwind } from "../src/shared/serialize";
 import { buildExportSnapshot, SnapshotBuildError } from "../src/shared/snapshot";
 import type { PluginDataDto, VariableDto } from "../src/shared/types";
 
@@ -84,6 +84,16 @@ describe("snapshot and serializers", () => {
     expect(css).toContain('--content-label: "Hello \\"XiiSANS\\"";');
     expect(css).toContain("--feature-enabled: true;");
     expect(css).toContain("--spacing-base: 8.125;");
+  });
+
+  it("creates CSS declarations with SCSS alias values for Mode output", () => {
+    const snapshot = buildExportSnapshot(dataWith(baseVariables), ["light", "dark"]);
+    const output = serializeCssScss(snapshot, "hex");
+    expect(output).toContain(":root {");
+    expect(output).toContain('[data-system-mode="dark"]');
+    expect(output).toContain("--brand-primary: #4567FFFF;");
+    expect(output).toContain("--brand-alias: $brand-primary;");
+    expect(output).not.toContain("--brand-alias: var(--brand-primary);");
   });
 
   it("creates direct SCSS variables without collection prefixes or a map", () => {

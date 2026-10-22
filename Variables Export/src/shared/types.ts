@@ -1,6 +1,6 @@
 export type VariableDataType = "BOOLEAN" | "COLOR" | "FLOAT" | "STRING";
 export type ColorFormat = "hex" | "rgb" | "hsl";
-export type ExportFormat = "css" | "scss" | "tailwind";
+export type ExportFormat = "css" | "scss" | "css-scss" | "tailwind";
 
 export interface ColorValueDto {
   r: number;

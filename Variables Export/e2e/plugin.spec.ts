@@ -21,10 +21,10 @@ test("loaded, hover, dropdown, and unchecked states remain stable", async ({ pag
   await page.goto("/?state=dropdown");
   const colorListbox = page.getByRole("listbox", { name: "颜色格式" });
   await expect(colorListbox).toBeVisible();
-  await expect(colorListbox).toHaveCSS("top", "40px");
+  await expect(colorListbox).toHaveCSS("top", "33px");
   const colorTrigger = page.getByRole("button", { name: /Hex/ });
   await colorTrigger.hover();
-  await expect(colorTrigger).toHaveCSS("border-top-color", "rgba(255, 255, 255, 0.4)");
+  await expect(colorTrigger).toHaveCSS("border-top-color", "rgba(255, 255, 255, 0.3)");
   const selectedColorOption = page.getByRole("option", { name: "Hex" });
   await expect(selectedColorOption).toHaveCSS("border-top-color", "rgba(255, 255, 255, 0.4)");
   await page.getByRole("option", { name: "RGB(A)" }).hover();

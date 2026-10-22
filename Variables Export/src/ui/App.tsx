@@ -345,9 +345,9 @@ export function App({ bridge = browserBridge, initialData, demoState }: AppProps
       <section className="preview-panel" aria-label="变量导出预览">
         <header className="panel-header preview-header">
           <nav className="format-tabs" aria-label="导出格式">
-            {(["css", "scss", "tailwind"] as ExportFormat[]).map((format) => (
+            {(["css", "scss", "css-scss", "tailwind"] as ExportFormat[]).map((format) => (
               <button type="button" key={format} className={activeFormat === format ? "active" : ""} onClick={() => setActiveFormat(format)}>
-                {format === "tailwind" ? "Tailwind" : format.toUpperCase()}
+                {format === "tailwind" ? "Tailwind" : format === "css-scss" ? "CSS/SCSS" : format.toUpperCase()}
               </button>
             ))}
           </nav>

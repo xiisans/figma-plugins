@@ -1,0 +1,37 @@
+{
+  "name": "xiisans-color-gradient",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generate solid and alpha color scales in Figma.",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build && npm run build:plugin",
+    "build:plugin": "esbuild src/plugin/main.ts --bundle --outfile=dist/plugin.js --target=es2020 --format=iife",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
+    "check": "npm run typecheck && npm run test && npm run test:e2e"
+  },
+  "dependencies": {
+    "culori": "^4.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.120.0",
+    "@playwright/test": "^1.56.1",
+    "@types/culori": "^4.0.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^5.0.4",
+    "esbuild": "^0.25.11",
+    "jsdom": "^27.0.1",
+    "sass": "^1.93.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vite-plugin-singlefile": "^2.3.0",
+    "vitest": "^3.2.4"
+  }
+}

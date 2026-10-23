@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildTextResults, textLayerName, validateTextConfig, type TextRenameConfig, type TextTarget } from "../src/shared/text";
+import {
+  buildNumberNamingResults,
+  buildTextResults,
+  textLayerName,
+  validateNumberNamingConfig,
+  validateTextConfig,
+  type TextRenameConfig,
+  type TextTarget
+} from "../src/shared/text";
 
 function target(characters: string, originalName = "原图层名"): TextTarget {
   return { id: "text-1", type: "TEXT", originalName, characters, x: 0, y: 0, sourceIndex: 0 };
@@ -99,5 +107,33 @@ describe("text number suffix", () => {
     expect(validateTextConfig(config("", "", { enabled: true, digits: null })).valid).toBe(false);
     expect(validateTextConfig(config("", "", { enabled: true, digits: 33 })).valid).toBe(false);
     expect(validateTextConfig(config("", "", { enabled: false, digits: 3 })).valid).toBe(false);
+  });
+});
+
+describe("numeric text naming", () => {
+  const orderedTargets: TextTarget[] = [
+    { ...target("第三"), id: "c", x: 200, sourceIndex: 2 },
+    { ...target("第一"), id: "a", x: 0, sourceIndex: 0 },
+    { ...target("第二"), id: "b", x: 100, sourceIndex: 1 }
+  ];
+
+  it("uses the start value and adds the step in canvas order", () => {
+    const results = buildNumberNamingResults(orderedTargets, { startValue: 10, step: 5, direction: "asc" }, true);
+    expect(results.map((result) => result.nextText)).toEqual(["10", "15", "20"]);
+    expect(results.map((result) => result.nextName)).toEqual(["10", "15", "20"]);
+  });
+
+  it("subtracts the step in descending mode and preserves names when synchronization is off", () => {
+    const results = buildNumberNamingResults(orderedTargets, { startValue: 10, step: 5, direction: "desc" }, false);
+    expect(results.map((result) => result.nextText)).toEqual(["10", "5", "0"]);
+    expect(results.map((result) => result.nextName)).toEqual(["原图层名", "原图层名", "原图层名"]);
+  });
+
+  it("accepts zero and negative starts but requires a positive integer step", () => {
+    expect(validateNumberNamingConfig({ startValue: 0, step: 1, direction: "asc" }).valid).toBe(true);
+    expect(validateNumberNamingConfig({ startValue: -5, step: 2, direction: "asc" }).valid).toBe(true);
+    expect(validateNumberNamingConfig({ startValue: null, step: 1, direction: "asc" }).valid).toBe(false);
+    expect(validateNumberNamingConfig({ startValue: 1, step: 0, direction: "asc" }).valid).toBe(false);
+    expect(validateNumberNamingConfig({ startValue: 1, step: 1.5, direction: "asc" }).valid).toBe(false);
   });
 });

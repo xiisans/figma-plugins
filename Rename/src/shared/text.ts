@@ -11,6 +11,12 @@ export interface TextRenameConfig extends ReplaceConfig {
   number: NumberTokenConfig;
 }
 
+export interface NumberNamingConfig {
+  startValue: number | null;
+  step: number | null;
+  direction: "asc" | "desc";
+}
+
 export interface TextTarget extends RenameTarget {
   characters: string;
 }
@@ -72,8 +78,40 @@ export function buildTextResults(targets: TextTarget[], config: TextRenameConfig
   });
 }
 
+export function validateNumberNamingConfig(config: NumberNamingConfig): ValidationResult {
+  if (!isSafeInteger(config.startValue)) return { valid: false, message: "请输入整数起始值" };
+  if (!isSafeInteger(config.step) || config.step <= 0) return { valid: false, message: "请输入大于 0 的整数步长" };
+  return { valid: true };
+}
+
+export function buildNumberNamingResults(
+  targets: TextTarget[],
+  config: NumberNamingConfig,
+  syncLayerName: boolean
+): TextResult[] {
+  const validation = validateNumberNamingConfig(config);
+  if (!validation.valid) throw new Error(validation.message);
+  const byId = new Map(targets.map((target) => [target.id, target]));
+  return sortTargets(targets).map(({ id }, index) => {
+    const target = byId.get(id)!;
+    const offset = config.step! * index;
+    const nextValue = config.direction === "asc" ? config.startValue! + offset : config.startValue! - offset;
+    if (!Number.isSafeInteger(nextValue)) throw new Error("数字序列超出安全整数范围");
+    const nextText = String(nextValue);
+    const edits: TextEdit[] = [{ start: 0, end: target.characters.length, replacement: nextText }];
+    const nextName = syncLayerName ? textLayerName(nextText) : target.originalName;
+    const textChanged = nextText !== target.characters;
+    const nameChanged = nextName !== target.originalName;
+    return { id, originalText: target.characters, nextText, nextName, edits, textChanged, nameChanged, changed: textChanged || nameChanged };
+  });
+}
+
 function isValidNumberWidth(value: number | null): value is number {
   return value !== null && Number.isInteger(value) && value >= 1 && value <= 32;
+}
+
+function isSafeInteger(value: number | null): value is number {
+  return value !== null && Number.isSafeInteger(value);
 }
 
 function findTextEdits(value: string, config: ReplaceConfig): TextEdit[] {

@@ -15,6 +15,7 @@
         <button id="quick-tab" class="tab is-active" type="button" role="tab" aria-selected="true" aria-controls="quick-panel">快速命名</button>
         <button id="replace-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="replace-panel">选择替换</button>
         <button id="text-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="text-panel">文本命名</button>
+        <button id="number-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="number-panel">数字命名</button>
       </header>
 
       <section class="content">
@@ -186,6 +187,44 @@
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
             </button>
+          </div>
+        </div>
+
+        <div id="number-panel" class="mode-panel" role="tabpanel" aria-labelledby="number-tab" hidden>
+          <div class="field">
+            <label class="field-label" for="number-start">输入数字</label>
+            <div class="input-shell">
+              <input id="number-start" class="text-input" type="number" step="1" inputmode="numeric" placeholder="输入起始值" autocomplete="off" />
+              <button class="input-clear" type="button" data-clear-target="number-start" aria-label="清除起始值" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="sequence-row number-naming-row">
+            <div class="input-shell">
+              <input id="number-step" class="sequence-input" type="number" min="1" step="1" inputmode="numeric" placeholder="输入步长" />
+              <button class="input-clear" type="button" data-clear-target="number-step" aria-label="清除步长" title="清除" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="segmented" aria-label="数字命名排序">
+              <button class="segment is-active" type="button" data-number-naming-direction="asc" aria-label="升序" title="升序">
+                <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="12" y1="19" x2="12" y2="5"></line>
+                  <polyline points="5 12 12 5 19 12"></polyline>
+                </svg>
+              </button>
+              <button class="segment" type="button" data-number-naming-direction="desc" aria-label="降序" title="降序">
+                <svg class="segment-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 

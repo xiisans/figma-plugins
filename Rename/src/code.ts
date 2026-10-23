@@ -1,6 +1,6 @@
 import type { PluginToUIMessage, SelectionSnapshot, UIToPluginMessage } from "./shared/messages";
 import { buildRenameResults, sortTargets, type RenameTarget } from "./shared/rename";
-import { buildTextResults, type TextTarget } from "./shared/text";
+import { buildNumberNamingResults, buildTextResults, type TextResult, type TextTarget } from "./shared/text";
 
 const SUPPORTED_NODE_TYPES = new Set<SceneNode["type"]>([
   "FRAME",
@@ -86,7 +86,7 @@ function toRenameTarget(node: SceneNode, sourceIndex: number): RenameTarget {
 async function executeRename(message: Extract<UIToPluginMessage, { type: "EXECUTE_RENAME" }>): Promise<void> {
   try {
     const snapshot = getSelectionSnapshot();
-    if (message.payload.mode === "text") {
+    if (message.payload.mode === "text" || message.payload.mode === "number") {
       const changedCount = await executeTextChanges(snapshot.textTargets, message.payload);
       figma.commitUndo();
       figma.notify(`已更新 ${changedCount} 个文本图层`);
@@ -151,7 +151,10 @@ async function executeRename(message: Extract<UIToPluginMessage, { type: "EXECUT
 
 async function executeTextChanges(targets: TextTarget[], payload: Extract<UIToPluginMessage, { type: "EXECUTE_RENAME" }>["payload"]): Promise<number> {
   if (targets.length === 0) throw new Error("选中图层及其后代中没有文本图层");
-  const results = buildTextResults(targets, payload.text, payload.syncLayerName).filter((result) => result.changed);
+  const allResults: TextResult[] = payload.mode === "number"
+    ? buildNumberNamingResults(targets, payload.numberNaming, payload.syncLayerName)
+    : buildTextResults(targets, payload.text, payload.syncLayerName);
+  const results = allResults.filter((result) => result.changed);
   if (results.length === 0) throw new Error("所选文本没有匹配内容或内容未发生变化");
 
   const entries = await Promise.all(results.map(async (result) => {

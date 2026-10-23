@@ -31,6 +31,7 @@ const payload: ExecuteRenamePayload = {
   quick: { baseName: "新画板", number: { enabled: false, digits: null, direction: "asc" }, letter: { enabled: false, width: null, letterCase: "upper", direction: "asc" }, tokenOrder: [] },
   replace: { searchText: "旧", replacementText: "新" },
   text: { searchText: "旧", replacementText: "新", number: { enabled: false, digits: null, direction: "asc" } },
+  numberNaming: { startValue: 1, step: 1, direction: "asc" },
   syncLayerName: true
 };
 
@@ -248,6 +249,25 @@ describe("text mode controller", () => {
       type: "SELECTION_CHANGED",
       payload: expect.objectContaining({ textTargets: [expect.objectContaining({ characters: "标题01" })] })
     }));
+  });
+
+  it("replaces descendant text with an ascending numeric sequence", async () => {
+    const first = textNode("a", "标题");
+    const second = textNode("b", "按钮");
+    second.x = 100;
+    second.absoluteBoundingBox.x = 100;
+    host.currentPage.selection = [second, first];
+    await execute({ mode: "number", numberNaming: { startValue: 10, step: 5, direction: "asc" } });
+    expect([first.characters, second.characters]).toEqual(["10", "15"]);
+    expect([first.name, second.name]).toEqual(["10", "15"]);
+  });
+
+  it("keeps layer names in numeric mode when synchronization is unchecked", async () => {
+    const node = textNode("t", "标题", "标题图层");
+    host.currentPage.selection = [node];
+    await execute({ mode: "number", numberNaming: { startValue: 8, step: 2, direction: "desc" }, syncLayerName: false });
+    expect(node.characters).toBe("8");
+    expect(node.name).toBe("标题图层");
   });
 
   it("rejects stale content that changes while fonts are loading", async () => {

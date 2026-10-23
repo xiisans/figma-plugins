@@ -1,0 +1,12 @@
+{
+  "name": "西无 — 颜色梯度",
+  "id": "xiisans-color-gradient-local",
+  "api": "1.0.0",
+  "main": "dist/plugin.js",
+  "ui": "dist/index.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

@@ -12,7 +12,14 @@ import {
   type TokenKind,
   sortTargets
 } from "./shared/rename";
-import { buildTextResults, validateTextConfig, type TextRenameConfig } from "./shared/text";
+import {
+  buildNumberNamingResults,
+  buildTextResults,
+  validateNumberNamingConfig,
+  validateTextConfig,
+  type NumberNamingConfig,
+  type TextRenameConfig
+} from "./shared/text";
 
 const quickConfig: QuickRenameConfig = {
   baseName: "",
@@ -26,6 +33,7 @@ const textConfig: TextRenameConfig = {
   replacementText: "",
   number: { enabled: false, digits: null, direction: "asc" }
 };
+const numberNamingConfig: NumberNamingConfig = { startValue: null, step: null, direction: "asc" };
 
 let mode: RenameMode = "quick";
 let snapshot: SelectionSnapshot = { targets: [], textTargets: [], ignoredCount: 0, selectionCount: 0 };
@@ -39,9 +47,11 @@ const elements = {
   quickTab: byId<HTMLButtonElement>("quick-tab"),
   replaceTab: byId<HTMLButtonElement>("replace-tab"),
   textTab: byId<HTMLButtonElement>("text-tab"),
+  numberTab: byId<HTMLButtonElement>("number-tab"),
   quickPanel: byId<HTMLElement>("quick-panel"),
   replacePanel: byId<HTMLElement>("replace-panel"),
   textPanel: byId<HTMLElement>("text-panel"),
+  numberPanel: byId<HTMLElement>("number-panel"),
   baseName: byId<HTMLInputElement>("base-name"),
   numberDigits: byId<HTMLInputElement>("number-digits"),
   letterWidth: byId<HTMLInputElement>("letter-width"),
@@ -53,6 +63,8 @@ const elements = {
   textReplacement: byId<HTMLInputElement>("text-replacement"),
   textNumberDigits: byId<HTMLInputElement>("text-number-digits"),
   toggleTextNumber: byId<HTMLButtonElement>("toggle-text-number"),
+  numberStart: byId<HTMLInputElement>("number-start"),
+  numberStep: byId<HTMLInputElement>("number-step"),
   previewList: byId<HTMLElement>("preview-list"),
   selectionMeta: byId<HTMLElement>("selection-meta"),
   syncLayerName: byId<HTMLInputElement>("sync-layer-name"),
@@ -93,6 +105,7 @@ function bindEvents(): void {
   elements.quickTab.addEventListener("click", () => setMode("quick"));
   elements.replaceTab.addEventListener("click", () => setMode("replace"));
   elements.textTab.addEventListener("click", () => setMode("text"));
+  elements.numberTab.addEventListener("click", () => setMode("number"));
 
   elements.baseName.addEventListener("input", () => {
     quickConfig.baseName = elements.baseName.value;
@@ -135,6 +148,14 @@ function bindEvents(): void {
     if (!elements.textNumberDigits.value.trim() && !elements.textNumberDigits.validity.badInput) {
       textConfig.number.enabled = false;
     }
+    refreshSelectionBeforeRender();
+  });
+  elements.numberStart.addEventListener("input", () => {
+    numberNamingConfig.startValue = parseInteger(elements.numberStart.value);
+    refreshSelectionBeforeRender();
+  });
+  elements.numberStep.addEventListener("input", () => {
+    numberNamingConfig.step = parseInteger(elements.numberStep.value);
     refreshSelectionBeforeRender();
   });
   document.querySelectorAll<HTMLButtonElement>(".input-clear").forEach((button) => {
@@ -181,6 +202,13 @@ function bindEvents(): void {
       refreshSelectionBeforeRender();
     });
   });
+  document.querySelectorAll<HTMLButtonElement>("[data-number-naming-direction]").forEach((button) => {
+    button.addEventListener("click", () => {
+      numberNamingConfig.direction = button.dataset.numberNamingDirection as Direction;
+      setSegmentActive("[data-number-naming-direction]", button);
+      refreshSelectionBeforeRender();
+    });
+  });
 
   elements.confirmButton.addEventListener("click", executeRename);
   document.addEventListener("keydown", (event) => {
@@ -194,7 +222,8 @@ function setMode(nextMode: RenameMode): void {
   const panels = [
     { mode: "quick", tab: elements.quickTab, panel: elements.quickPanel },
     { mode: "replace", tab: elements.replaceTab, panel: elements.replacePanel },
-    { mode: "text", tab: elements.textTab, panel: elements.textPanel }
+    { mode: "text", tab: elements.textTab, panel: elements.textPanel },
+    { mode: "number", tab: elements.numberTab, panel: elements.numberPanel }
   ];
   for (const item of panels) {
     const active = mode === item.mode;
@@ -255,20 +284,23 @@ function render(showCommittedResult = false): void {
   elements.toggleTextNumber.classList.toggle("is-added", textConfig.number.enabled);
   elements.toggleTextNumber.disabled = !textConfig.number.enabled && !isValidWidth(textConfig.number.digits, 32);
 
-  const targetCount = mode === "text" ? snapshot.textTargets.length : snapshot.targets.length;
-  const ignoredCount = mode === "text" ? 0 : snapshot.ignoredCount;
+  const textTargetMode = mode === "text" || mode === "number";
+  const targetCount = textTargetMode ? snapshot.textTargets.length : snapshot.targets.length;
+  const ignoredCount = textTargetMode ? 0 : snapshot.ignoredCount;
   const ignoredText = ignoredCount > 0 ? ` · 忽略 ${ignoredCount} 个` : "";
-  elements.selectionMeta.textContent = `${targetCount} 个${mode === "text" ? "文本图层" : "画板"}${ignoredText}`;
+  elements.selectionMeta.textContent = `${targetCount} 个${textTargetMode ? "文本图层" : "画板"}${ignoredText}`;
   elements.previewList.replaceChildren();
 
   const validation = mode === "quick" ? validateQuickConfig(quickConfig)
-    : mode === "text" ? validateTextConfig(textConfig) : validateReplaceConfig(replaceConfig);
+    : mode === "text" ? validateTextConfig(textConfig)
+      : mode === "number" ? validateNumberNamingConfig(numberNamingConfig)
+        : validateReplaceConfig(replaceConfig);
   currentResults = [];
 
   if (targetCount === 0) {
-    appendPlaceholder(mode === "text" ? "选择包含文本的图层后显示预览" : "选择画板后显示预览");
+    appendPlaceholder(textTargetMode ? "选择包含文本的图层后显示预览" : "选择画板后显示预览");
   } else if (showCommittedResult) {
-    if (mode === "text") {
+    if (textTargetMode) {
       const textById = new Map(snapshot.textTargets.map((target) => [target.id, target.characters]));
       currentResults = sortTargets(snapshot.textTargets).map((target) => {
         const value = textById.get(target.id) ?? "";
@@ -293,6 +325,13 @@ function render(showCommittedResult = false): void {
           nextName: result.nextText,
           changed: result.changed
         }))
+      : mode === "number"
+        ? buildNumberNamingResults(snapshot.textTargets, numberNamingConfig, elements.syncLayerName.checked).map((result) => ({
+            id: result.id,
+            originalName: result.originalText,
+            nextName: result.nextText,
+            changed: result.changed
+          }))
       : buildRenameResults(snapshot.targets, mode, quickConfig, replaceConfig);
     renderResultNames(currentResults);
   }
@@ -306,7 +345,7 @@ function renderResultNames(results: RenameResult[]): void {
   results.slice(0, PREVIEW_LIMIT).forEach((result, index) => {
     const item = document.createElement("span");
     item.className = "preview-item";
-    const previewText = mode === "text" && !result.nextName ? "（空文本）" : result.nextName;
+    const previewText = (mode === "text" || mode === "number") && !result.nextName ? "（空文本）" : result.nextName;
     item.textContent = previewText;
     item.title = result.nextName;
     if (index === PREVIEW_LIMIT - 1 && results.length > PREVIEW_LIMIT) {
@@ -344,6 +383,7 @@ function executeRename(): void {
       quick: structuredCloneSafe(quickConfig),
       replace: { ...replaceConfig },
       text: { ...textConfig, number: { ...textConfig.number } },
+      numberNaming: { ...numberNamingConfig },
       syncLayerName: elements.syncLayerName.checked
     }
   });
@@ -358,6 +398,8 @@ function clearAllInputValues(): void {
   elements.textSearch.value = "";
   elements.textReplacement.value = "";
   elements.textNumberDigits.value = "";
+  elements.numberStart.value = "";
+  elements.numberStep.value = "";
 
   quickConfig.baseName = "";
   quickConfig.number.enabled = false;
@@ -371,6 +413,8 @@ function clearAllInputValues(): void {
   textConfig.replacementText = "";
   textConfig.number.enabled = false;
   textConfig.number.digits = null;
+  numberNamingConfig.startValue = null;
+  numberNamingConfig.step = null;
 }
 
 function refreshSelectionBeforeRender(): void {
@@ -390,6 +434,12 @@ function parseWidth(value: string): number | null {
   if (!value.trim()) return null;
   const parsed = Number(value);
   return Number.isInteger(parsed) ? parsed : null;
+}
+
+function parseInteger(value: string): number | null {
+  if (!value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
 function isValidWidth(value: number | null, maximum: number): boolean {

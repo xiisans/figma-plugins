@@ -1,4 +1,4 @@
-export type RenameMode = "quick" | "replace" | "text";
+export type RenameMode = "quick" | "replace" | "text" | "number";
 export type Direction = "asc" | "desc";
 export type LetterCase = "upper" | "lower";
 export type TokenKind = "number" | "letter";
@@ -105,7 +105,7 @@ export function validateReplaceConfig(config: ReplaceConfig): ValidationResult {
 
 export function buildRenameResults(
   targets: RenameTarget[],
-  mode: Exclude<RenameMode, "text">,
+  mode: Exclude<RenameMode, "text" | "number">,
   quick: QuickRenameConfig,
   replace: ReplaceConfig
 ): RenameResult[] {

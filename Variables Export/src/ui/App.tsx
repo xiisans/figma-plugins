@@ -115,6 +115,8 @@ export function App({ bridge = browserBridge, initialData, demoState }: AppProps
   const [colorFormat, setColorFormat] = useState<ColorFormat>("hex");
   const [loading, setLoading] = useState(!initialData);
   const [generating, setGenerating] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [formatOpen, setFormatOpen] = useState(demoState === "dropdown");
   const [error, setError] = useState<PluginErrorDto | null>(null);
   const [status, setStatus] = useState("");
@@ -245,7 +247,8 @@ export function App({ bridge = browserBridge, initialData, demoState }: AppProps
   }
 
   async function copyOutput() {
-    if (!output) return;
+    if (!output || copying) return;
+    setCopying(true);
     const selection = window.getSelection();
     const selectedText = selection && previewRef.current && selection.rangeCount > 0
       && previewRef.current.contains(selection.anchorNode) && previewRef.current.contains(selection.focusNode)
@@ -256,18 +259,28 @@ export function App({ bridge = browserBridge, initialData, demoState }: AppProps
       setStatus(selectedText ? "已复制选中内容" : "已复制全部内容");
     } catch {
       setStatus("复制失败");
+    } finally {
+      setCopying(false);
     }
   }
 
-  function downloadOutput() {
-    if (!output || !data) return;
-    const url = URL.createObjectURL(new Blob(["\uFEFF", output.replace(/\r\n/g, "\n")], { type: "text/plain;charset=utf-8" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = sanitizeFileName(data.fileName);
-    anchor.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    setStatus("已导出 TXT");
+  async function downloadOutput() {
+    if (!output || !data || exporting) return;
+    setExporting(true);
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    try {
+      const url = URL.createObjectURL(new Blob(["\uFEFF", output.replace(/\r\n/g, "\n")], { type: "text/plain;charset=utf-8" }));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = sanitizeFileName(data.fileName);
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setStatus("已导出 TXT");
+    } catch {
+      setStatus("导出失败");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -391,8 +404,8 @@ export function App({ bridge = browserBridge, initialData, demoState }: AppProps
 
         <footer className="panel-footer action-footer">
           <span className="status-text" role="status" aria-live="polite">{status}</span>
-          <button type="button" className="action-button" disabled={!output || Boolean(error)} onClick={copyOutput}>复制</button>
-          <button type="button" className="action-button" disabled={!output || Boolean(error)} onClick={downloadOutput}>导出</button>
+          <button type="button" className="action-button" disabled={!output || Boolean(error) || copying} onClick={copyOutput}>{copying ? "..." : "复制"}</button>
+          <button type="button" className="action-button" disabled={!output || Boolean(error) || exporting} onClick={downloadOutput}>{exporting ? "..." : "导出"}</button>
         </footer>
       </section>
     </main>

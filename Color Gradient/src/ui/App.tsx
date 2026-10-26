@@ -175,7 +175,7 @@ function fixtureState() {
   return {
     selection: params.get('state') === 'empty' ? EMPTY_SELECTION : FIXTURE_SELECTION,
     mode: params.get('mode') === 'alpha' ? 'alpha' as GradientMode : 'solid' as GradientMode,
-    output: params.get('output') === 'board' ? 'board' as OutputMode : 'variables' as OutputMode,
+    output: params.get('output') === 'variables' ? 'variables' as OutputMode : 'board' as OutputMode,
     steps: params.get('steps') === '20' ? 20 as StepCount : 10 as StepCount,
     dropdown: params.get('dropdown') ?? '',
   };
@@ -188,8 +188,8 @@ export default function App() {
   const [mode, setMode] = useState<GradientMode>(fixture?.mode ?? 'solid');
   const [model, setModel] = useState<ColorModel>('oklch');
   const [steps, setSteps] = useState<StepCount>(fixture?.steps ?? 10);
-  const [distribution, setDistribution] = useState<Distribution>('uniform');
-  const [output, setOutput] = useState<OutputMode>(fixture?.output ?? 'variables');
+  const [distribution, setDistribution] = useState<Distribution>('centered');
+  const [output, setOutput] = useState<OutputMode>(fixture?.output ?? 'board');
   const [collectionId, setCollectionId] = useState<string>();
   const fixtureHasSelection = fixture?.selection.status === 'valid';
   const [collectionName, setCollectionName] = useState(fixtureHasSelection && fixture?.dropdown !== 'collection' ? 'color' : '');
@@ -328,7 +328,7 @@ export default function App() {
           <Segmented
             label="生成方式"
             value={output}
-            options={[{ value: 'variables', label: '生成变量' }, { value: 'board', label: '生成画板' }]}
+            options={[{ value: 'board', label: '生成画板' }, { value: 'variables', label: '生成变量' }]}
             onChange={setOutput}
           />
         </section>
@@ -405,7 +405,7 @@ export default function App() {
                 : '')}
           </span>
           <button className="generate-button" type="button" disabled={!canGenerate} onClick={generate}>
-            {busy ? '生成中' : output === 'variables' ? '生成变量' : '生成画板'}
+            {busy ? '...' : output === 'variables' ? '生成变量' : '生成画板'}
           </button>
         </footer>
       </section>

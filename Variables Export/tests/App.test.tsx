@@ -85,8 +85,9 @@ describe("App", () => {
     expect(screen.getByRole("checkbox", { name: "选择新增集合" })).toHaveAttribute("aria-checked", "true");
   });
 
-  it("copies the generated text and downloads UTF-8 TXT", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
+  it("shows processing labels while copying and exporting", async () => {
+    let finishCopy: (() => void) | undefined;
+    const writeText = vi.fn(() => new Promise<void>((resolve) => { finishCopy = resolve; }));
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
     const createObjectURL = vi.fn().mockReturnValue("blob:test");
     const revokeObjectURL = vi.fn();
@@ -98,9 +99,14 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "选择加载的集合01" }));
     fireEvent.click(screen.getByRole("button", { name: "加载所选变量" }));
     fireEvent.click(screen.getByRole("button", { name: "复制" }));
+    expect(screen.getByRole("button", { name: "..." })).toBeDisabled();
+    finishCopy?.();
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining("--neutral-10")));
+    await waitFor(() => expect(screen.getByRole("button", { name: "复制" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "导出" }));
-    expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(screen.getByRole("button", { name: "..." })).toBeDisabled();
+    await waitFor(() => expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob)));
+    await waitFor(() => expect(screen.getByRole("button", { name: "导出" })).toBeEnabled());
     expect(click).toHaveBeenCalledOnce();
     click.mockRestore();
   });

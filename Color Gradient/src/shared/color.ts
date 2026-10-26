@@ -39,7 +39,16 @@ export function buildLightnesses(
   targetLightness: number,
 ): { values: number[]; corrected: boolean } {
   if (distribution === 'uniform') {
-    return { values: linspace(MAX_LIGHTNESS, MIN_LIGHTNESS, steps), corrected: false };
+    const values = linspace(MAX_LIGHTNESS, MIN_LIGHTNESS, steps);
+    const targetIndex = values.reduce(
+      (closestIndex, value, index) =>
+        Math.abs(value - targetLightness) < Math.abs(values[closestIndex] - targetLightness)
+          ? index
+          : closestIndex,
+      0,
+    );
+    values[targetIndex] = targetLightness;
+    return { values, corrected: false };
   }
 
   const target = clamp(targetLightness, MIN_LIGHTNESS, MAX_LIGHTNESS);
@@ -126,6 +135,23 @@ function sourceLightness(base: RgbaColor, model: ColorModel): number {
   return converted.l;
 }
 
+function originalStop(
+  base: RgbaColor,
+  model: ColorModel,
+  index: number,
+  suffix: number,
+): GradientStop {
+  const rgb = { r: clamp(base.r), g: clamp(base.g), b: clamp(base.b), a: 1 };
+  return {
+    ...rgb,
+    index,
+    suffix,
+    hex: colorToHex(rgb),
+    modelLabel: describeColor(rgb, model),
+    alphaPercent: 100,
+  };
+}
+
 export function buildGradient(base: RgbaColor, config: GradientConfig): GradientResult {
   const suffixes = buildSuffixes(config.steps);
   if (config.mode === 'alpha') {
@@ -147,16 +173,20 @@ export function buildGradient(base: RgbaColor, config: GradientConfig): Gradient
     };
   }
 
+  const baseLightness = sourceLightness(base, config.model);
   const lightness = buildLightnesses(
     config.steps,
     config.distribution,
-    sourceLightness(base, config.model),
+    baseLightness,
   );
   return {
     targetLightnessCorrected: lightness.corrected,
-    stops: lightness.values.map((value, index) =>
-      solidStop(base, config.model, value, index, suffixes[index]),
-    ),
+    stops: lightness.values.map((value, index) => {
+      if (config.distribution === 'uniform' && value === baseLightness) {
+        return originalStop(base, config.model, index, suffixes[index]);
+      }
+      return solidStop(base, config.model, value, index, suffixes[index]);
+    }),
   };
 }
 

@@ -389,7 +389,7 @@ export default function App() {
             </span>
           )}
           <button className="generate-button" type="button" disabled={!canGenerate} onClick={generate}>
-            {generating ? '生成中' : '生成'}
+            {generating ? '...' : '生成'}
           </button>
         </footer>
       </section>

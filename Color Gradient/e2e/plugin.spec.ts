@@ -16,16 +16,26 @@ test('light empty state matches the fixed plugin viewport', async ({ page }) => 
   await expect(page.locator('.settings-panel')).toHaveCSS('width', '200px');
   await expect(page.locator('.preview-panel')).toHaveCSS('width', '400px');
   await expect(page.getByText('请选择要添加颜色梯度的色板')).toBeVisible();
-  await expect(page.getByRole('button', { name: '生成变量' }).last()).toBeDisabled();
+  await expect(page.getByRole('button', { name: '目标居中' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('group', { name: '生成方式' }).getByRole('button')).toHaveText(['生成画板', '生成变量']);
+  await expect(page.getByRole('button', { name: '生成画板' }).last()).toBeDisabled();
   await expect(page).toHaveScreenshot('light-empty.png');
 });
 
 test('solid 20-step preview and collection menu remain stable', async ({ page }) => {
-  await loadFixture(page, '?state=filled&steps=20&dropdown=collection&theme=light');
+  await loadFixture(page, '?state=filled&steps=20&output=variables&dropdown=collection&theme=light');
   await expect(page.locator('.gradient-row')).toHaveCount(20);
+  await expect(page.locator('.gradient-row__model').first()).toHaveCSS('width', '120px');
+  await expect(page.locator('.gradient-row__model').first()).toHaveCSS('text-overflow', 'clip');
   await expect(page.getByRole('listbox', { name: '集合列表' })).toBeVisible();
   await expect(page.getByRole('option', { name: 'color' })).toBeVisible();
   await expect(page).toHaveScreenshot('light-solid-20-dropdown.png');
+
+  await page.getByRole('button', { name: 'HSL' }).click();
+  const allHslValuesFit = await page.locator('.gradient-row__model').evaluateAll((elements) =>
+    elements.every((element) => element.scrollWidth <= element.clientWidth),
+  );
+  expect(allHslValuesFit).toBe(true);
 });
 
 test('dark alpha preview uses the exact opacity sequence', async ({ page }) => {

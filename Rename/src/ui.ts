@@ -338,7 +338,7 @@ function render(showCommittedResult = false): void {
 
   const hasChanges = currentResults.some((result) => result.changed);
   elements.confirmButton.disabled = executing || showCommittedResult || !validation.valid || targetCount === 0 || !hasChanges;
-  elements.confirmButton.textContent = executing ? "处理中…" : "确定";
+  elements.confirmButton.textContent = executing ? "..." : "确定";
 }
 
 function renderResultNames(results: RenameResult[]): void {

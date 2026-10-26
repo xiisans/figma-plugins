@@ -3462,7 +3462,13 @@
   }
   function buildLightnesses(steps, distribution, targetLightness) {
     if (distribution === "uniform") {
-      return { values: linspace(MAX_LIGHTNESS, MIN_LIGHTNESS, steps), corrected: false };
+      const values = linspace(MAX_LIGHTNESS, MIN_LIGHTNESS, steps);
+      const targetIndex = values.reduce(
+        (closestIndex, value, index) => Math.abs(value - targetLightness) < Math.abs(values[closestIndex] - targetLightness) ? index : closestIndex,
+        0
+      );
+      values[targetIndex] = targetLightness;
+      return { values, corrected: false };
     }
     const target = clamp(targetLightness, MIN_LIGHTNESS, MAX_LIGHTNESS);
     const lightCount = steps === 10 ? 5 : 10;
@@ -3535,6 +3541,17 @@
     }
     return converted.l;
   }
+  function originalStop(base, model, index, suffix) {
+    const rgb3 = { r: clamp(base.r), g: clamp(base.g), b: clamp(base.b), a: 1 };
+    return {
+      ...rgb3,
+      index,
+      suffix,
+      hex: colorToHex(rgb3),
+      modelLabel: describeColor(rgb3, model),
+      alphaPercent: 100
+    };
+  }
   function buildGradient(base, config) {
     const suffixes = buildSuffixes(config.steps);
     if (config.mode === "alpha") {
@@ -3555,17 +3572,34 @@
         })
       };
     }
+    const baseLightness = sourceLightness(base, config.model);
     const lightness = buildLightnesses(
       config.steps,
       config.distribution,
-      sourceLightness(base, config.model)
+      baseLightness
     );
     return {
       targetLightnessCorrected: lightness.corrected,
-      stops: lightness.values.map(
-        (value, index) => solidStop(base, config.model, value, index, suffixes[index])
-      )
+      stops: lightness.values.map((value, index) => {
+        if (config.distribution === "uniform" && value === baseLightness) {
+          return originalStop(base, config.model, index, suffixes[index]);
+        }
+        return solidStop(base, config.model, value, index, suffixes[index]);
+      })
     };
+  }
+  function describeColor(base, model) {
+    const color = { mode: "rgb", r: base.r, g: base.g, b: base.b };
+    if (model === "oklch") {
+      const value2 = toOklch(color);
+      if (!value2 || value2.mode !== "oklch") return colorToHex(base);
+      const h2 = Number.isFinite(value2.h ?? Number.NaN) ? value2.h ?? 0 : 0;
+      return `OKLCH ${clean(value2.l * 100, 1)} ${clean(value2.c, 3)} ${clean(h2, 1)}`;
+    }
+    const value = toHsl(color);
+    if (!value || value.mode !== "hsl") return colorToHex(base);
+    const h = Number.isFinite(value.h ?? Number.NaN) ? value.h ?? 0 : 0;
+    return `HSL ${clean(h, 1)} ${clean(value.s * 100, 1)}% ${clean(value.l * 100, 1)}%`;
   }
 
   // src/plugin/main.ts

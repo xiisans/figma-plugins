@@ -391,13 +391,14 @@ body.figma-dark .asset-icon {
 .gradient-row__data {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: 93px 52px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: 120px 52px minmax(0, 1fr);
+  gap: 12px;
   min-width: 0;
 }
 
 .gradient-row__data.mode-alpha {
   grid-template-columns: 44px minmax(0, 1fr);
+  gap: 24px;
 }
 
 .gradient-row__model,
@@ -410,6 +411,11 @@ body.figma-dark .asset-icon {
 }
 
 .gradient-row__hex {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.gradient-row__model {
   overflow: visible;
   text-overflow: clip;
 }

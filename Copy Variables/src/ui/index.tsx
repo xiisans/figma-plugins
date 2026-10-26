@@ -229,7 +229,7 @@ function App() {
           <span>全选</span>
         </div>
         <div className="footer-status">{message || `${selectedVariableCount} 项已选择 · ${variableCount} 个变量`}</div>
-        <button className="primary-action" disabled={!selected.size || busy || !nodes.length} onClick={submit}>{busy ? '处理中…' : actionLabel}</button>
+        <button className="primary-action" disabled={!selected.size || busy || !nodes.length} onClick={submit}>{busy ? '...' : actionLabel}</button>
       </footer>
     </main>
   );

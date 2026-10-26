@@ -12,12 +12,22 @@ const solidConfig: GradientConfig = {
 };
 
 describe('lightness distribution', () => {
-  it('creates inclusive, descending uniform endpoints', () => {
+  it('creates descending uniform endpoints and preserves the target lightness', () => {
     expect(linspace(0.98, 0.06, 10)).toHaveLength(10);
     const result = buildLightnesses(10, 'uniform', 0.5);
     expect(result.values[0]).toBeCloseTo(0.98);
     expect(result.values[result.values.length - 1]).toBeCloseTo(0.06);
+    expect(result.values).toContain(0.5);
     expect(result.values.every((value, index, list) => index === 0 || list[index - 1] > value)).toBe(true);
+  });
+
+  it('preserves uniform targets at the black and white boundaries', () => {
+    const white = buildLightnesses(10, 'uniform', 1);
+    const black = buildLightnesses(20, 'uniform', 0);
+    expect(white.values[0]).toBe(1);
+    expect(black.values[black.values.length - 1]).toBe(0);
+    expect(white.values.every((value, index, list) => index === 0 || list[index - 1] > value)).toBe(true);
+    expect(black.values.every((value, index, list) => index === 0 || list[index - 1] > value)).toBe(true);
   });
 
   it('places the target at step 5 or 10 for centered scales', () => {
@@ -53,6 +63,23 @@ describe('gradient generation', () => {
       expect(stop.b).toBeLessThanOrEqual(1);
       expect(stop.a).toBe(1);
       expect(stop.modelLabel).toMatch(/^OKLCH /);
+    }
+    const original = result.stops.find((stop) => stop.hex === '#7B5EF1');
+    expect(original).toMatchObject(PURPLE);
+  });
+
+  it('preserves the exact source color in uniform OKLCH and HSL scales', () => {
+    for (const model of ['oklch', 'hsl'] as const) {
+      for (const steps of [10, 20] as const) {
+        const result = buildGradient(PURPLE, { ...solidConfig, model, steps });
+        expect(result.stops).toContainEqual(expect.objectContaining({
+          r: PURPLE.r,
+          g: PURPLE.g,
+          b: PURPLE.b,
+          a: 1,
+          hex: '#7B5EF1',
+        }));
+      }
     }
   });
 

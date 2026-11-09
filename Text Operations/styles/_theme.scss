@@ -1,0 +1,117 @@
+@use './variables' as v;
+
+:root,
+html.figma-light,
+body.figma-light {
+  --primary-default: #{v.$brand-light-1};
+  --primary-hover: #{v.$brand-light-2};
+  --secondary-default: #{v.$orange-light-1};
+  --secondary-hover: #{v.$orange-light-2};
+  --error-default: #{v.$red-light-1};
+  --error-secondary: #{v.$red-light-2};
+  --text-5: #{v.$black-a-5};
+  --text-10: #{v.$black-a-10};
+  --text-20: #{v.$black-a-20};
+  --text-30: #{v.$black-a-30};
+  --text-40: #{v.$black-a-40};
+  --text-50: #{v.$black-a-50};
+  --text-60: #{v.$black-a-60};
+  --text-70: #{v.$black-a-70};
+  --text-80: #{v.$black-a-80};
+  --text-90: #{v.$black-a-90};
+  --text-100: #{v.$black-a-100};
+  --surface-10: #{v.$white-10};
+  --surface-20: #{v.$white-20};
+  --surface-30: #{v.$white-30};
+  --surface-40: #{v.$white-40};
+  --surface-50: #{v.$white-50};
+  --surface-60: #{v.$white-60};
+  --surface-70: #{v.$white-70};
+  --surface-80: #{v.$white-80};
+  --surface-90: #{v.$white-90};
+  --surface-100: #{v.$white-100};
+  --button-color-default: #{v.$white-a-100};
+  --button-color-hover: #{v.$white-a-100};
+  --button-color-disable: #{v.$black-a-60};
+  --button-bg-default: #{v.$brand-light-1};
+  --button-bg-hover: #{v.$brand-light-2};
+  --button-bg-disable: #{v.$white-20};
+  --scrollbar-default: #{v.$white-60};
+  --scrollbar-hover: #{v.$white-40};
+  --scrollbar-active: #{v.$white-20};
+  --input-border-default: #{v.$white-80};
+  --input-border-hover: #{v.$white-60};
+  --input-border-focus: #{v.$brand-light-1};
+  --input-color-placeholder: #{v.$black-a-30};
+  --input-color-focus: #{v.$black-a-100};
+  --input-bg-default: #{v.$white-80};
+  --input-bg-hover: #{v.$white-100};
+}
+
+html.dark,
+html.figma-dark,
+body.figma-dark {
+  --primary-default: #{v.$brand-dark-1};
+  --primary-hover: #{v.$brand-dark-2};
+  --secondary-default: #{v.$orange-dark-1};
+  --secondary-hover: #{v.$orange-dark-2};
+  --error-default: #{v.$red-dark-1};
+  --error-secondary: #{v.$red-dark-2};
+  --text-5: #{v.$white-a-5};
+  --text-10: #{v.$white-a-10};
+  --text-20: #{v.$white-a-20};
+  --text-30: #{v.$white-a-30};
+  --text-40: #{v.$white-a-40};
+  --text-50: #{v.$white-a-50};
+  --text-60: #{v.$white-a-60};
+  --text-70: #{v.$white-a-70};
+  --text-80: #{v.$white-a-80};
+  --text-90: #{v.$white-a-90};
+  --text-100: #{v.$white-a-100};
+  --surface-10: #{v.$black-10};
+  --surface-20: #{v.$black-20};
+  --surface-30: #{v.$black-30};
+  --surface-40: #{v.$black-40};
+  --surface-50: #{v.$black-50};
+  --surface-60: #{v.$black-60};
+  --surface-70: #{v.$black-70};
+  --surface-80: #{v.$black-80};
+  --surface-90: #{v.$black-90};
+  --surface-100: #{v.$black-100};
+  --button-color-default: #{v.$white-a-100};
+  --button-color-hover: #{v.$white-a-100};
+  --button-color-disable: #{v.$black-a-60};
+  --button-bg-default: #{v.$brand-dark-1};
+  --button-bg-hover: #{v.$brand-dark-2};
+  --button-bg-disable: #{v.$black-20};
+  --scrollbar-default: #{v.$black-80};
+  --scrollbar-hover: #{v.$black-60};
+  --scrollbar-active: #{v.$black-40};
+  --input-border-default: #{v.$black-80};
+  --input-border-hover: #{v.$black-60};
+  --input-border-focus: #{v.$brand-dark-1};
+  --input-color-placeholder: #{v.$white-a-30};
+  --input-color-focus: #{v.$white-a-100};
+  --input-bg-default: #{v.$black-80};
+  --input-bg-hover: #{v.$black-100};
+}
+
+:root {
+  --space-0: 0;
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --radius-2: 2px;
+  --radius-4: 4px;
+  --scrollbar-width: 4px;
+}

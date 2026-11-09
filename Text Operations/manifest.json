@@ -1,0 +1,12 @@
+{
+  "name": "西无 — 文本处理",
+  "id": "xiwu-text-operations",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/index.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  findBlankLineRanges,
   findLiteralRanges,
   mergeSeparators,
   normalizeExtractedText,
@@ -58,6 +59,29 @@ describe('split ranges', () => {
   it('drops empty input and preserves unsplit text', () => {
     expect(splitTextRanges('', 'slash', false)).toEqual([]);
     expect(splitTextRanges('完整文本', 'slash', false)).toEqual([{ start: 0, end: 4 }]);
+  });
+
+  it('drops whitespace-only segments even when keeping delimiters', () => {
+    expect(splitTextRanges('\n ,\r\n\t,甲,\n　', 'comma', false)).toEqual([{ start: 7, end: 8 }]);
+    expect(splitTextRanges('\n ,\r\n\t,甲,\n　', 'comma', true)).toEqual([{ start: 7, end: 9 }]);
+    expect(splitTextRanges('\n \r\n\t　', 'newline', true)).toEqual([]);
+  });
+});
+
+describe('split blank line removal', () => {
+  it.each([
+    ['', ''],
+    ['\n \r\n\t　', ''],
+    ['\r\n\n甲\r\n \t\n　\r乙\n\n ', '甲\r\n乙'],
+    ['甲\n乙\r\n丙\r丁', '甲\n乙\r\n丙\r丁'],
+    [' 甲 \n\t乙　', ' 甲 \n\t乙　'],
+    ['甲\n\n\n乙\n\n丙\n', '甲\n乙\n丙'],
+  ])('removes only blank lines from %j', (value, expected) => {
+    const result = findBlankLineRanges(value).reduceRight(
+      (text, range) => text.slice(0, range.start) + text.slice(range.end),
+      value,
+    );
+    expect(result).toBe(expected);
   });
 });
 

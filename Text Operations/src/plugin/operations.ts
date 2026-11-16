@@ -1,5 +1,5 @@
 import type { UiRequest } from '../shared/messages';
-import { findLiteralRanges, mergeSeparators, normalizeExtractedText, splitTextRanges } from '../shared/text';
+import { findBlankLineRanges, findLiteralRanges, mergeSeparators, normalizeExtractedText, splitTextRanges } from '../shared/text';
 import { collectTextNodes, hasInstanceAncestor, sortTextNodes } from './selection';
 
 type ReplaceRequest = Extract<UiRequest, { type: 'replace' }>;
@@ -202,6 +202,10 @@ function appendSegments(
         try {
           container.appendChild(clone);
           trimCloneToRange(clone, range.start, range.end);
+          const blankLines = findBlankLineRanges(clone.characters);
+          for (let index = blankLines.length - 1; index >= 0; index -= 1) {
+            clone.deleteCharacters(blankLines[index].start, blankLines[index].end);
+          }
           clone.name = clone.characters;
           clone.rotation = 0;
           clone.layoutPositioning = 'AUTO';

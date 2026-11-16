@@ -203,3 +203,106 @@ describe('Figma operation preflight', () => {
     expect(figmaMock.commitUndo).toHaveBeenCalledOnce();
   });
 });
+
+describe('split results without blank lines', () => {
+  const cases = [
+    {
+      delimiter: 'newline',
+      characters: '\n \r\n甲\r\n\r\n乙\n\t\n',
+      removed: ['甲', '乙'],
+      kept: ['甲', '乙'],
+    },
+    {
+      delimiter: 'space',
+      characters: '\n甲\n\n乙 \r\n\t\r\n丙 \n　\r\n',
+      removed: ['甲\n乙', '丙'],
+      kept: ['甲\n乙 ', '丙 '],
+    },
+    {
+      delimiter: 'comma',
+      characters: '\n甲\n\n乙,\r\n \r\n丙，\n　\r\n',
+      removed: ['甲\n乙', '丙'],
+      kept: ['甲\n乙,', '丙，'],
+    },
+    {
+      delimiter: 'period',
+      characters: '\n甲\n\n乙.\r\n \r\n丙。\n　\r\n',
+      removed: ['甲\n乙', '丙'],
+      kept: ['甲\n乙.', '丙。'],
+    },
+    {
+      delimiter: 'slash',
+      characters: '\n甲\n\n乙/\r\n \r\n丙／\n　\r\n',
+      removed: ['甲\n乙', '丙'],
+      kept: ['甲\n乙/', '丙／'],
+    },
+  ] as const;
+
+  it.each(cases.flatMap((entry) => [false, true].map((keepDelimiter) => ({ ...entry, keepDelimiter }))))(
+    'removes blank lines for $delimiter with keepDelimiter=$keepDelimiter',
+    async ({ delimiter, characters, removed, kept, keepDelimiter }) => {
+      const source = textNode({ characters });
+      const figmaMock = installFigma([source.node]);
+      Object.assign(source.node, { parent: figmaMock.currentPage });
+
+      await expect(
+        splitText({
+          type: 'split',
+          requestId: 'split-blank-lines',
+          delimiter,
+          keepDelimiter,
+          direction: 'vertical',
+          spacing: 4,
+        }),
+      ).resolves.toEqual({ message: '已拆分为 2 个文本图层' });
+
+      const frame = figmaMock.createFrame.mock.results[0].value as FrameNode;
+      expect(frame.children.map((node) => (node as TextNode).characters)).toEqual(keepDelimiter ? kept : removed);
+      expect(frame.children.map((node) => node.name)).toEqual(keepDelimiter ? kept : removed);
+      expect(source.node.deleteCharacters).not.toHaveBeenCalled();
+      expect(source.remove).toHaveBeenCalledOnce();
+      expect(figmaMock.commitUndo).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('cleans unsplit text when reusing a shared frame', async () => {
+    const frame = childContainer('shared-frame', 'FRAME', 'VERTICAL') as FrameNode;
+    const source = textNode({ characters: '\n甲\n \n乙\n', parent: frame });
+    const figmaMock = installFigma([source.node]);
+    Object.assign(frame, { parent: figmaMock.currentPage });
+
+    await splitText({
+      type: 'split',
+      requestId: 'split-without-matches',
+      delimiter: 'comma',
+      keepDelimiter: true,
+      direction: 'vertical',
+      spacing: 4,
+    });
+
+    expect(figmaMock.createFrame).not.toHaveBeenCalled();
+    expect(frame.children.map((node) => (node as TextNode).characters)).toEqual(['甲\n乙']);
+    expect(source.node.characters).toBe('\n甲\n \n乙\n');
+    expect(source.remove).toHaveBeenCalledOnce();
+  });
+
+  it('does not create a frame or delete the source if all segments are blank', async () => {
+    const source = textNode({ characters: '\n \r\n\t　' });
+    const figmaMock = installFigma([source.node]);
+
+    await expect(
+      splitText({
+        type: 'split',
+        requestId: 'split-only-blank-lines',
+        delimiter: 'comma',
+        keepDelimiter: false,
+        direction: 'vertical',
+        spacing: 4,
+      }),
+    ).rejects.toThrow('拆分后没有可生成的文本');
+
+    expect(figmaMock.createFrame).not.toHaveBeenCalled();
+    expect(source.remove).not.toHaveBeenCalled();
+    expect(figmaMock.commitUndo).not.toHaveBeenCalled();
+  });
+});

@@ -62,6 +62,24 @@ export function normalizeExtractedText(value: string): string {
     .replace(/\n[ \t\u3000]*\n+/g, '\n');
 }
 
+export function findBlankLineRanges(value: string): TextRange[] {
+  const ranges: TextRange[] = [];
+  let cursor = 0;
+  let lastContentEnd = 0;
+
+  for (const match of value.matchAll(/([^\r\n]*)(?:\r\n?|\n|$)/g)) {
+    if (!match[1].trim()) continue;
+
+    const start = match.index;
+    if (start > cursor) ranges.push({ start: cursor, end: start });
+    lastContentEnd = start + match[1].length;
+    cursor = start + match[0].length;
+  }
+
+  if (lastContentEnd < value.length) ranges.push({ start: lastContentEnd, end: value.length });
+  return ranges;
+}
+
 export function splitTextRanges(
   value: string,
   delimiter: SplitDelimiter,
@@ -78,7 +96,7 @@ export function splitTextRanges(
     const delimiterStart = match.index;
     const delimiterEnd = delimiterStart + match[0].length;
 
-    if (delimiterStart > cursor) {
+    if (value.slice(cursor, delimiterStart).trim()) {
       ranges.push({
         start: cursor,
         end: keepDelimiter ? delimiterEnd : delimiterStart,
@@ -90,7 +108,7 @@ export function splitTextRanges(
     cursor = delimiterEnd;
   }
 
-  if (cursor < value.length) ranges.push({ start: cursor, end: value.length });
+  if (value.slice(cursor).trim()) ranges.push({ start: cursor, end: value.length });
   return ranges.filter((range) => range.end > range.start);
 }
 

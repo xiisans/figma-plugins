@@ -301,9 +301,9 @@ export function App() {
           />
 
           <div className="option-section">
-            <div className="field__label">合并规则</div>
+            <div className="field__label">多个文本合并规则</div>
             <Segmented
-              ariaLabel="合并规则"
+              ariaLabel="多个文本合并规则"
               value={mergeRule}
               options={mergeOptions}
               disabled={controlsDisabled}

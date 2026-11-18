@@ -1,0 +1,29 @@
+/* _scrollbar.scss */
+::-webkit-scrollbar {
+    width: var(--scrollbar-width);
+}
+
+// ::-webkit-scrollbar-track {
+//     // 滚动条轨道背景
+//     background: var(--scroll-track);
+// }
+
+::-webkit-scrollbar-thumb {
+    // 滚动条滑块背景
+    background: var(--scrollbar-default);
+    border-radius: var(--radius-4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-hover);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--scrollbar-active);
+}
+
+/* Firefox 兼容 */
+// * {
+//     scrollbar-color: var(--scrollbar-default) none;
+//     scrollbar-width: thin;
+// }
